@@ -1,0 +1,210 @@
+:root {
+  --sheet: #202326;
+  --negative: #16181a;
+  --surface-raised: #2c3034;
+  --line: #33383d;
+  --line-strong: #4b5157;
+  --ink: #eceae6;
+  --ink-dim: #a1a9b1;
+  --pencil: #f2c230;
+  --danger: #ef7d6f;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  background: var(--sheet);
+  color: var(--ink);
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+button:focus-visible {
+  outline: 2px solid var(--pencil);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+.masthead {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  padding: 18px 28px 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.masthead h1 {
+  font-family: 'Fira Sans Condensed', 'Fira Sans', sans-serif;
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+#count {
+  color: var(--ink-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+#open-folder {
+  margin-left: auto;
+  padding: 6px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 5px;
+}
+
+#open-folder:hover {
+  background: var(--surface-raised);
+}
+
+#sheet {
+  overflow-y: auto;
+  padding: 0 28px 28px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+#empty {
+  max-width: 34em;
+  padding-top: 48px;
+  color: var(--ink-dim);
+  font-size: 15px;
+}
+
+.day h2 {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 18px 0 10px;
+  background: var(--sheet);
+  font-family: 'Fira Sans Condensed', 'Fira Sans', sans-serif;
+  font-size: 17px;
+  font-weight: 500;
+}
+
+.frames {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 18px 14px;
+  list-style: none;
+}
+
+.shot {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: var(--negative);
+  cursor: copy;
+}
+
+.shot img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.shot:hover {
+  border-color: var(--line-strong);
+}
+
+.frame.copied .shot {
+  border-color: var(--pencil);
+  box-shadow: 0 0 0 1px var(--pencil);
+}
+
+.frame.copied .shot::after {
+  content: 'Copiée';
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  padding: 1px 7px;
+  border-radius: 3px;
+  background: var(--pencil);
+  color: #1f1a08;
+  font-family: 'Fira Sans Condensed', 'Fira Sans', sans-serif;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.caption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 6px;
+  font-family: 'Fira Sans Condensed', 'Fira Sans', sans-serif;
+  font-size: 13px;
+}
+
+.caption time {
+  color: var(--ink-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.tools {
+  display: flex;
+  gap: 2px;
+  opacity: 0.55;
+}
+
+.frame:hover .tools,
+.frame:focus-within .tools {
+  opacity: 1;
+}
+
+.tools button {
+  padding: 1px 6px;
+  border-radius: 3px;
+}
+
+.tools button:hover {
+  background: var(--surface-raised);
+}
+
+.tools button[data-tool='trash']:hover {
+  color: var(--danger);
+}
+
+footer {
+  padding: 7px 28px;
+  border-top: 1px solid var(--line);
+  min-height: 34px;
+}
+
+#status {
+  color: var(--ink-dim);
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .tools {
+    transition: opacity 120ms ease-out;
+  }
+}

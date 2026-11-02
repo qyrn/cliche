@@ -1,0 +1,71 @@
+{
+  "name": "cliche",
+  "version": "0.1.0",
+  "description": "Captures d'écran rapides pour KDE Plasma Wayland, avec historique et OCR local",
+  "author": "qyrn",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "main": "./out/main/index.js",
+  "scripts": {
+    "native": "mkdir -p resources/bin && cc -O2 -Wall -Wextra -Werror -o resources/bin/kwin-grab native/kwin-grab.c $(pkg-config --cflags --libs libsystemd) -pthread",
+    "dev": "pnpm native && electron-vite dev",
+    "build": "pnpm native && electron-vite build",
+    "build:linux": "pnpm build && electron-builder --linux",
+    "install:linux": "pnpm build:linux && sh scripts/install-linux.sh",
+    "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
+    "lint": "eslint .",
+    "format": "prettier --write ."
+  },
+  "packageManager": "pnpm@10.23.0",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "electron",
+      "esbuild"
+    ]
+  },
+  "build": {
+    "appId": "dev.qyrn.cliche",
+    "productName": "cliche",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "out/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "resources/bin",
+        "to": "bin"
+      },
+      {
+        "from": "resources/icon.png",
+        "to": "icon.png"
+      },
+      {
+        "from": "resources/tray",
+        "to": "tray"
+      }
+    ],
+    "linux": {
+      "target": [
+        "dir"
+      ],
+      "icon": "resources/icon.png",
+      "category": "Utility"
+    }
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^24.19.2",
+    "electron": "^45.2.1",
+    "electron-builder": "^26.18.0",
+    "electron-vite": "^6.0.0",
+    "eslint": "^10.14.0",
+    "globals": "^17.14.0",
+    "prettier": "^3.9.10",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.72.1",
+    "vite": "^8.3.5"
+  }
+}

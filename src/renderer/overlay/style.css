@@ -1,0 +1,135 @@
+:root {
+  --surface: #202326;
+  --surface-raised: #2c3034;
+  --line: #3b4045;
+  --ink: #eceae6;
+  --ink-dim: #a1a9b1;
+  --pencil: #f2c230;
+  --pencil-ink: #1f1a08;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+  user-select: none;
+  font-family: 'Fira Sans', sans-serif;
+  color: var(--ink);
+}
+
+canvas {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+}
+
+#shade {
+  cursor: crosshair;
+}
+
+kbd {
+  font-family: 'Fira Sans Condensed', 'Fira Sans', sans-serif;
+  font-size: 11.5px;
+  font-weight: 500;
+  padding: 1px 5px;
+  margin-left: 6px;
+  border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
+  border-radius: 3px;
+  opacity: 0.8;
+}
+
+#size {
+  position: fixed;
+  padding: 2px 7px;
+  border-radius: 3px;
+  background: rgb(24 26 28 / 0.9);
+  color: var(--pencil);
+  font-family: 'Fira Sans Condensed', 'Fira Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+#actions {
+  position: fixed;
+  display: flex;
+  gap: 2px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
+}
+
+#actions[hidden],
+#size[hidden],
+#hint[hidden] {
+  display: none;
+}
+
+#actions button {
+  display: flex;
+  align-items: center;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13.5px;
+  cursor: pointer;
+}
+
+#actions button:hover {
+  background: var(--surface-raised);
+}
+
+#actions button.primary {
+  background: var(--pencil);
+  color: var(--pencil-ink);
+  font-weight: 500;
+}
+
+#actions button.primary:hover {
+  background: color-mix(in srgb, var(--pencil) 88%, white);
+}
+
+#actions button:focus-visible {
+  outline: 2px solid var(--pencil);
+  outline-offset: 1px;
+}
+
+#hint {
+  position: fixed;
+  left: 50%;
+  bottom: 32px;
+  translate: -50% 0;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 9px 16px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: rgb(32 35 38 / 0.94);
+  font-size: 14px;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+#hint .legend {
+  color: var(--ink-dim);
+  font-size: 13px;
+}
+
+#hint .legend kbd {
+  margin: 0 5px 0 0;
+}
