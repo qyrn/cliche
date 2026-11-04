@@ -181,6 +181,14 @@ sheet.addEventListener('keydown', (event) => {
   }
 })
 
+sheet.addEventListener('dragstart', (event) => {
+  const target = frameFrom(event.target)
+  if (target) {
+    event.preventDefault()
+    window.captures.startDrag(target.name)
+  }
+})
+
 openFolderButton.addEventListener('click', () => {
   window.captures
     .openFolder()

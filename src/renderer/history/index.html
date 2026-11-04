@@ -21,12 +21,14 @@
     </main>
     <footer>
       <p id="status" role="status" aria-live="polite">
-        Clique sur une capture pour la copier. Double-clique pour l'ouvrir.
+        Clique sur une capture pour la copier, double-clique pour l'ouvrir, ou glisse-la dans une autre app.
       </p>
     </footer>
     <template id="frame-template">
       <li class="frame">
-        <button type="button" class="shot"><img alt="" loading="lazy" decoding="async" /></button>
+        <button type="button" class="shot" draggable="true">
+          <img alt="" loading="lazy" decoding="async" />
+        </button>
         <div class="caption">
           <time></time>
           <span class="tools">

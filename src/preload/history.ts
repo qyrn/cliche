@@ -8,6 +8,7 @@ const historyBridge: HistoryBridge = {
   open: (name) => ipcRenderer.invoke(IpcChannel.HistoryOpen, name),
   openFolder: () => ipcRenderer.invoke(IpcChannel.HistoryOpenFolder),
   trash: (name) => ipcRenderer.invoke(IpcChannel.HistoryTrash, name),
+  startDrag: (name) => ipcRenderer.send(IpcChannel.HistoryStartDrag, name),
   onChanged: (listener) => {
     ipcRenderer.on(IpcChannel.HistoryChanged, () => listener())
   }

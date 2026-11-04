@@ -10,6 +10,7 @@ export const IpcChannel = {
   HistoryOpen: 'history:open',
   HistoryOpenFolder: 'history:open-folder',
   HistoryTrash: 'history:trash',
+  HistoryStartDrag: 'history:start-drag',
   HistoryChanged: 'history:changed'
 } as const
 
@@ -52,5 +53,6 @@ export interface HistoryBridge {
   open(name: string): Promise<void>
   openFolder(): Promise<void>
   trash(name: string): Promise<void>
+  startDrag(name: string): void
   onChanged(listener: () => void): void
 }
