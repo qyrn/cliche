@@ -11,6 +11,7 @@ import { notify } from './notify'
 import {
   hideOverlay,
   isOverlayWebContents,
+  onOverlayLost,
   revealOverlay,
   sendFrameToOverlay,
   whenOverlayReady
@@ -19,9 +20,11 @@ import { grabActiveScreen, type CapturedFrame } from './screenGrab'
 import { copyTextFromImage } from './textRecognition'
 
 const TEXT_PREVIEW_LENGTH = 160
+const REVEAL_TIMEOUT_MS = 4000
 
 let overlayBusy = false
 let pendingFrame: CapturedFrame | null = null
+let revealWatchdog: NodeJS.Timeout | undefined
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
@@ -41,6 +44,10 @@ export async function startCapture(): Promise<void> {
     await whenOverlayReady()
     pendingFrame = await grabActiveScreen()
     sendFrameToOverlay(pendingFrame)
+    revealWatchdog = setTimeout(
+      () => abandonCapture("L'écran de sélection n'a pas répondu, réessaie."),
+      REVEAL_TIMEOUT_MS
+    )
   } catch (error) {
     overlayBusy = false
     notify('La capture a échoué', errorMessage(error))
@@ -48,11 +55,26 @@ export async function startCapture(): Promise<void> {
 }
 
 function closeOverlay(): CapturedFrame | null {
+  clearTimeout(revealWatchdog)
   const frame = pendingFrame
   pendingFrame = null
   hideOverlay()
   overlayBusy = false
   return frame
+}
+
+function abandonCapture(reason: string): void {
+  if (overlayBusy) {
+    closeOverlay()
+    notify('La capture a échoué', reason)
+  }
+}
+
+function revealDrawnFrame(): void {
+  clearTimeout(revealWatchdog)
+  if (pendingFrame) {
+    revealOverlay()
+  }
 }
 
 async function takeRegion(payload: unknown): Promise<NativeImage> {
@@ -99,7 +121,8 @@ function fromOverlay(handler: (payload: unknown) => Promise<void> | void) {
 }
 
 export function registerCaptureFlow(): void {
-  ipcMain.on(IpcChannel.OverlayFrameDrawn, fromOverlay(revealOverlay))
+  onOverlayLost(() => abandonCapture("L'écran de sélection a planté, réessaie."))
+  ipcMain.on(IpcChannel.OverlayFrameDrawn, fromOverlay(revealDrawnFrame))
   ipcMain.on(
     IpcChannel.OverlayDismiss,
     fromOverlay(() => {

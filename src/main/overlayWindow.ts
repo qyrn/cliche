@@ -7,6 +7,7 @@ const PRIMING_FALLBACK_MS = 1000
 
 let overlay: BrowserWindow | null = null
 let overlayReady: Promise<void> = Promise.resolve()
+let overlayLost: () => void = () => undefined
 
 function primeFullscreen(window: BrowserWindow): Promise<void> {
   return new Promise((resolve) => {
@@ -38,8 +39,21 @@ export function prepareOverlay(): void {
     title: 'cliché',
     webPreferences: { ...rendererWebPreferences('overlay'), backgroundThrottling: false }
   })
+  window.webContents.on('render-process-gone', (_event, details) => {
+    if (details.reason === 'clean-exit') {
+      return
+    }
+    overlay = null
+    window.destroy()
+    overlayLost()
+    prepareOverlay()
+  })
   overlay = window
   overlayReady = loadRendererPage(window, 'overlay').then(() => primeFullscreen(window))
+}
+
+export function onOverlayLost(listener: () => void): void {
+  overlayLost = listener
 }
 
 export function whenOverlayReady(): Promise<void> {

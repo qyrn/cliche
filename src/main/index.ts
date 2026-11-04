@@ -13,6 +13,8 @@ const CAPTURE_FLAG = '--capture'
 const HIDDEN_FLAG = '--hidden'
 const screenshotDirectory = process.env['CLICHE_SCREENSHOT']
 
+const stayInTray = (): void => undefined
+
 function handleLaunchArguments(argv: string[]): void {
   if (argv.includes(CAPTURE_FLAG)) {
     void startCapture()
@@ -43,6 +45,7 @@ if (screenshotDirectory) {
   app.quit()
 } else {
   app.on('second-instance', (_event, argv) => handleLaunchArguments(argv))
+  app.on('window-all-closed', stayInTray)
   app.on('will-quit', releaseCaptureShortcut)
   for (const signal of ['SIGINT', 'SIGTERM'] as const) {
     process.on(signal, () => app.quit())
