@@ -27,6 +27,11 @@ export interface Region {
   height: number
 }
 
+export interface ExportRequest {
+  region: Region
+  blurs: Region[]
+}
+
 export interface CaptureEntry {
   name: string
   takenAt: number
@@ -35,8 +40,8 @@ export interface CaptureEntry {
 export interface OverlayBridge {
   onFrame(listener: (frame: ScreenFrame) => void): void
   frameDrawn(): void
-  copy(region: Region): void
-  readText(region: Region): void
+  copy(request: ExportRequest): void
+  readText(request: ExportRequest): void
   dismiss(): void
 }
 

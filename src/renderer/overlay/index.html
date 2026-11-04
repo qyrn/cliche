@@ -21,9 +21,15 @@
     <div id="actions" role="toolbar" aria-label="Que faire de cette zone" hidden>
       <button type="button" class="primary" data-action="copy">Copier <kbd>Entrée</kbd></button>
       <button type="button" data-action="text">Copier le texte <kbd>T</kbd></button>
+      <button type="button" data-action="blur" aria-pressed="false">Flouter <kbd>B</kbd></button>
       <button type="button" data-action="dismiss">Annuler <kbd>Échap</kbd></button>
     </div>
-    <p id="hint">
+    <p id="blur-hint" class="hint" hidden>
+      Glisse sur ce que tu veux flouter
+      <span class="legend"><kbd>Ctrl+Z</kbd> retirer le dernier</span>
+      <span class="legend"><kbd>B</kbd> terminer</span>
+    </p>
+    <p id="hint" class="hint">
       Glisse pour choisir une zone, ou clique sur une fenêtre
       <span class="legend"><kbd>Entrée</kbd> tout l'écran</span>
       <span class="legend"><kbd>Échap</kbd> annuler</span>

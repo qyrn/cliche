@@ -2,10 +2,11 @@ import { homedir } from 'node:os'
 import { relative } from 'node:path'
 import { setTimeout as delay } from 'node:timers/promises'
 import { ipcMain, type IpcMainEvent, type NativeImage } from 'electron'
+import { pixelate } from '../shared/pixelate'
 import { IpcChannel } from '../shared/types'
 import { captureDirectory, saveCapture } from './captureStore'
 import { copyPngToClipboard } from './waylandClipboard'
-import { imageOfRegion, toRegionWithin } from './frameRegion'
+import { imageOfRegion, toExportRequestWithin } from './frameRegion'
 import { notifyHistoryChanged, showHistoryWindow } from './historyWindow'
 import { notify } from './notify'
 import {
@@ -82,9 +83,12 @@ async function takeRegion(payload: unknown): Promise<NativeImage> {
   if (!frame) {
     throw new Error('Aucune capture en cours')
   }
-  const region = toRegionWithin(payload, frame)
+  const request = toExportRequestWithin(payload, frame)
+  for (const blur of request.blurs) {
+    pixelate(frame.pixels, frame.width, blur)
+  }
   await delay(0)
-  return imageOfRegion(frame, region)
+  return imageOfRegion(frame, request.region)
 }
 
 async function copyAndSave(image: NativeImage): Promise<void> {

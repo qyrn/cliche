@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { toRegionWithin } from './frameRegion'
+import { toExportRequestWithin, toRegionWithin } from './frameRegion'
 
 vi.mock('electron', () => ({ nativeImage: {} }))
 
@@ -24,5 +24,27 @@ describe('toRegionWithin', () => {
     ['a non object', 'everything']
   ])('rejects %s', (_label, payload) => {
     expect(() => toRegionWithin(payload, frame)).toThrow('Zone de capture invalide')
+  })
+})
+
+describe('toExportRequestWithin', () => {
+  const region = { x: 10, y: 10, width: 100, height: 50 }
+
+  it('keeps the region and the blurred areas', () => {
+    const blurs = [{ x: 20, y: 20, width: 30, height: 12 }]
+    expect(toExportRequestWithin({ region, blurs }, frame)).toEqual({ region, blurs })
+  })
+
+  it('refuses a blur outside the screen', () => {
+    expect(() =>
+      toExportRequestWithin({ region, blurs: [{ x: 1910, y: 0, width: 20, height: 10 }] }, frame)
+    ).toThrow('Zone de capture invalide')
+  })
+
+  it('refuses a request without blurs or with too many of them', () => {
+    expect(() => toExportRequestWithin({ region }, frame)).toThrow('Demande de capture invalide')
+    expect(() => toExportRequestWithin({ region, blurs: Array(65).fill(region) }, frame)).toThrow(
+      'Demande de capture invalide'
+    )
   })
 })

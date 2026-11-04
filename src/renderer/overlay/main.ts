@@ -1,5 +1,6 @@
-import type { Region, ScreenFrame } from '../../shared/types'
+import type { ExportRequest, Region, ScreenFrame } from '../../shared/types'
 import { requireElement } from '../requireElement'
+import { frozenScreen } from './frozenScreen'
 import { paintLoupe, placeLoupe } from './magnifier'
 import {
   adjustRegion,
@@ -12,12 +13,13 @@ import {
   type DragZone,
   type Point
 } from './selectionGeometry'
-import { paintShade } from './shadePainter'
+import { paintBlurDraft, paintShade } from './shadePainter'
 
 type Gesture =
   | { kind: 'idle' }
   | { kind: 'drawing'; anchor: Point }
   | { kind: 'adjusting'; zone: DragZone; start: Point; original: Region }
+  | { kind: 'blurring'; anchor: Point }
 
 const MIN_SELECTION_PIXELS = 4
 const GRAB_MARGIN_CSS_PIXELS = 9
@@ -33,16 +35,21 @@ const loupe = requireElement('#loupe', HTMLDivElement)
 const loupeCanvas = requireElement('canvas', HTMLCanvasElement, loupe)
 const loupeLabel = requireElement('output', HTMLOutputElement, loupe)
 const actionBar = requireElement('#actions', HTMLDivElement)
+const blurButton = requireElement('[data-action="blur"]', HTMLButtonElement, actionBar)
 const hint = requireElement('#hint', HTMLParagraphElement)
+const blurHint = requireElement('#blur-hint', HTMLParagraphElement)
 const screenContext = memoryBackedContext(screenCanvas)
 const shadeContext = memoryBackedContext(shadeCanvas)
 const loupeContext = memoryBackedContext(loupeCanvas)
+const frozen = frozenScreen(screenContext)
 
 let bounds: Bounds = { width: 0, height: 0 }
 let selection: Region | null = null
 let gesture: Gesture = { kind: 'idle' }
 let windows: Region[] = []
 let hoveredWindow: Region | null = null
+let blurring = false
+let blurDraft: Region | null = null
 
 function memoryBackedContext(canvas: HTMLCanvasElement): CanvasRenderingContext2D {
   const context = canvas.getContext('2d', { willReadFrequently: true })
@@ -124,6 +131,11 @@ function placeActionBar(rect: Region): void {
 
 function render(): void {
   paintShade(shadeContext, selection, hoveredWindow, pixelsPerCssPixel())
+  if (blurDraft) {
+    paintBlurDraft(shadeContext, blurDraft, pixelsPerCssPixel())
+  }
+  blurHint.hidden = !blurring
+  blurButton.ariaPressed = String(blurring)
   hint.hidden = selection !== null || gesture.kind !== 'idle'
   const measured = selection ?? hoveredWindow
   if (measured) {
@@ -144,6 +156,8 @@ function render(): void {
 function resetSelection(): void {
   selection = null
   hoveredWindow = null
+  blurring = false
+  blurDraft = null
   gesture = { kind: 'idle' }
   shadeCanvas.style.cursor = cursorFor(null)
   loupe.hidden = true
@@ -161,8 +175,7 @@ function showFrame(frame: ScreenFrame): void {
   if (!(buffer instanceof ArrayBuffer)) {
     throw new Error('Image reçue dans un format inattendu')
   }
-  const pixels = new Uint8ClampedArray(buffer, byteOffset, byteLength)
-  screenContext.putImageData(new ImageData(pixels, frame.width, frame.height), 0, 0)
+  frozen.show(new Uint8ClampedArray(buffer, byteOffset, byteLength), frame.width, frame.height)
   resetSelection()
   window.overlay.frameDrawn()
 }
@@ -173,7 +186,7 @@ function regionToExport(): Region {
 
 function clearOverlay(): void {
   resetSelection()
-  screenContext.clearRect(0, 0, screenCanvas.width, screenCanvas.height)
+  frozen.clear()
 }
 
 function close(): void {
@@ -181,10 +194,16 @@ function close(): void {
   window.overlay.dismiss()
 }
 
-function finishWith(send: (region: Region) => void): void {
-  const region = regionToExport()
+function finishWith(send: (request: ExportRequest) => void): void {
+  const request = { region: regionToExport(), blurs: frozen.blurs() }
   clearOverlay()
-  send(region)
+  send(request)
+}
+
+function toggleBlurring(): void {
+  blurring = !blurring
+  shadeCanvas.style.cursor = blurring ? 'crosshair' : cursorFor(null)
+  render()
 }
 
 function copyRegion(): void {
@@ -202,7 +221,10 @@ shadeCanvas.addEventListener('pointerdown', (event) => {
   shadeCanvas.setPointerCapture(event.pointerId)
   const point = framePoint(event)
   const zone = selection ? zoneAt(selection, point, GRAB_MARGIN_CSS_PIXELS * pixelsPerCssPixel()) : null
-  if (selection && zone) {
+  if (blurring) {
+    gesture = { kind: 'blurring', anchor: point }
+    blurDraft = regionBetween(point, point, bounds)
+  } else if (selection && zone) {
     gesture = { kind: 'adjusting', zone, start: point, original: selection }
   } else {
     gesture = { kind: 'drawing', anchor: point }
@@ -222,11 +244,14 @@ shadeCanvas.addEventListener('pointermove', (event) => {
     const deltaY = point.y - gesture.start.y
     selection = adjustRegion(gesture.original, gesture.zone, deltaX, deltaY, bounds)
     render()
-  } else if (selection) {
+  } else if (gesture.kind === 'blurring') {
+    blurDraft = regionBetween(gesture.anchor, point, bounds)
+    render()
+  } else if (selection && !blurring) {
     shadeCanvas.style.cursor = cursorFor(
       zoneAt(selection, point, GRAB_MARGIN_CSS_PIXELS * pixelsPerCssPixel())
     )
-  } else {
+  } else if (!selection) {
     const hovered = windowAt(windows, point)
     if (hovered !== hoveredWindow) {
       hoveredWindow = hovered
@@ -244,9 +269,15 @@ shadeCanvas.addEventListener('pointerup', (event) => {
   if (gesture.kind === 'idle') {
     return
   }
-  const tooSmall =
-    selection && (selection.width < MIN_SELECTION_PIXELS || selection.height < MIN_SELECTION_PIXELS)
-  if (tooSmall) {
+  if (gesture.kind === 'blurring') {
+    if (blurDraft && blurDraft.width >= MIN_SELECTION_PIXELS && blurDraft.height >= MIN_SELECTION_PIXELS) {
+      frozen.addBlur(blurDraft)
+    }
+    blurDraft = null
+  } else if (
+    selection &&
+    (selection.width < MIN_SELECTION_PIXELS || selection.height < MIN_SELECTION_PIXELS)
+  ) {
     selection = gesture.kind === 'drawing' ? windowAt(windows, framePoint(event)) : null
   }
   hoveredWindow = null
@@ -255,7 +286,7 @@ shadeCanvas.addEventListener('pointerup', (event) => {
 })
 
 shadeCanvas.addEventListener('dblclick', (event) => {
-  if (selection && zoneAt(selection, framePoint(event), 0) === 'move') {
+  if (!blurring && selection && zoneAt(selection, framePoint(event), 0) === 'move') {
     copyRegion()
   }
 })
@@ -273,6 +304,10 @@ window.addEventListener('keydown', (event) => {
     copyRegion()
   } else if (event.key.toLowerCase() === 't' && !event.ctrlKey && !event.altKey) {
     readRegionText()
+  } else if (event.key.toLowerCase() === 'b' && !event.ctrlKey && !event.altKey && selection) {
+    toggleBlurring()
+  } else if (event.ctrlKey && event.key.toLowerCase() === 'z') {
+    frozen.removeLastBlur()
   } else if (selection && gesture.kind === 'idle') {
     const step = event.ctrlKey ? FAST_NUDGE_PIXELS : 1
     const nudged = nudgeRegion(selection, event.key, step, event.shiftKey, bounds)
@@ -291,6 +326,8 @@ actionBar.addEventListener('click', (event) => {
     copyRegion()
   } else if (action === 'text') {
     readRegionText()
+  } else if (action === 'blur') {
+    toggleBlurring()
   } else if (action === 'dismiss') {
     close()
   }

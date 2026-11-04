@@ -101,7 +101,7 @@ kbd {
 #actions[hidden],
 #size[hidden],
 #loupe[hidden],
-#hint[hidden] {
+.hint[hidden] {
   display: none;
 }
 
@@ -132,12 +132,17 @@ kbd {
   background: color-mix(in srgb, var(--pencil) 88%, white);
 }
 
+#actions button[aria-pressed='true'] {
+  background: var(--surface-raised);
+  color: var(--pencil);
+}
+
 #actions button:focus-visible {
   outline: 2px solid var(--pencil);
   outline-offset: 1px;
 }
 
-#hint {
+.hint {
   position: fixed;
   left: 50%;
   bottom: 32px;
@@ -154,11 +159,11 @@ kbd {
   white-space: nowrap;
 }
 
-#hint .legend {
+.hint .legend {
   color: var(--ink-dim);
   font-size: 13px;
 }
 
-#hint .legend kbd {
+.hint .legend kbd {
   margin: 0 5px 0 0;
 }

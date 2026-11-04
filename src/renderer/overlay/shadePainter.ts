@@ -73,3 +73,17 @@ export function paintShade(
     drawHandles(context, selection, Math.round(7 * pixelsPerCssPixel))
   }
 }
+
+export function paintBlurDraft(
+  context: CanvasRenderingContext2D,
+  draft: Region,
+  pixelsPerCssPixel: number
+): void {
+  const dash = Math.round(5 * pixelsPerCssPixel)
+  context.save()
+  context.setLineDash([dash, dash])
+  context.lineWidth = Math.max(1, Math.round(1.5 * pixelsPerCssPixel))
+  context.strokeStyle = PENCIL_COLOR
+  context.strokeRect(draft.x, draft.y, draft.width, draft.height)
+  context.restore()
+}

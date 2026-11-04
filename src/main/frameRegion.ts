@@ -1,8 +1,9 @@
 import { nativeImage, type NativeImage } from 'electron'
-import type { Region } from '../shared/types'
+import type { ExportRequest, Region } from '../shared/types'
 import type { CapturedFrame } from './screenGrab'
 
 const OPAQUE_ALPHA = 0xff000000
+const MAX_BLURS = 64
 
 function isRegion(value: unknown): value is Region {
   if (typeof value !== 'object' || value === null) {
@@ -25,6 +26,26 @@ export function toRegionWithin(payload: unknown, frame: Pick<CapturedFrame, 'wid
     throw new Error('Zone de capture invalide')
   }
   return payload
+}
+
+export function toExportRequestWithin(
+  payload: unknown,
+  frame: Pick<CapturedFrame, 'width' | 'height'>
+): ExportRequest {
+  if (
+    typeof payload !== 'object' ||
+    payload === null ||
+    !('region' in payload) ||
+    !('blurs' in payload) ||
+    !Array.isArray(payload.blurs) ||
+    payload.blurs.length > MAX_BLURS
+  ) {
+    throw new Error('Demande de capture invalide')
+  }
+  return {
+    region: toRegionWithin(payload.region, frame),
+    blurs: payload.blurs.map((blur: unknown) => toRegionWithin(blur, frame))
+  }
 }
 
 function cropAsBgra(frame: CapturedFrame, region: Region): Buffer {
