@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { adjustRegion, cursorFor, regionBetween, zoneAt } from './selectionGeometry'
+import { adjustRegion, cursorFor, nudgeRegion, regionBetween, zoneAt } from './selectionGeometry'
 
 const bounds = { width: 1000, height: 600 }
 const rect = { x: 100, y: 100, width: 200, height: 100 }
@@ -56,5 +56,21 @@ describe('cursorFor', () => {
   it('uses a crosshair outside any zone', () => {
     expect(cursorFor(null)).toBe('crosshair')
     expect(cursorFor('ne')).toBe('nesw-resize')
+  })
+})
+
+describe('nudgeRegion', () => {
+  it('moves the selection with the arrows', () => {
+    expect(nudgeRegion(rect, 'ArrowLeft', 1, false, bounds)).toEqual({ ...rect, x: 99 })
+    expect(nudgeRegion(rect, 'ArrowDown', 10, false, bounds)).toEqual({ ...rect, y: 110 })
+  })
+
+  it('resizes from the bottom right corner with shift', () => {
+    expect(nudgeRegion(rect, 'ArrowRight', 10, true, bounds)).toEqual({ ...rect, width: 210 })
+    expect(nudgeRegion({ ...rect, height: 1 }, 'ArrowUp', 10, true, bounds)).toEqual({ ...rect, height: 1 })
+  })
+
+  it('ignores keys that are not arrows', () => {
+    expect(nudgeRegion(rect, 'a', 1, false, bounds)).toBeNull()
   })
 })

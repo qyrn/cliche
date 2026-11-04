@@ -1,8 +1,10 @@
 import type { Region, ScreenFrame } from '../../shared/types'
 import { requireElement } from '../requireElement'
+import { paintLoupe, placeLoupe } from './magnifier'
 import {
   adjustRegion,
   cursorFor,
+  nudgeRegion,
   regionBetween,
   zoneAt,
   type Bounds,
@@ -20,14 +22,20 @@ const MIN_SELECTION_PIXELS = 4
 const GRAB_MARGIN_CSS_PIXELS = 9
 const FLOATING_GAP_CSS_PIXELS = 8
 const SCREEN_EDGE_CSS_PIXELS = 8
+const LOUPE_CSS_PIXELS = 120
+const FAST_NUDGE_PIXELS = 10
 
 const screenCanvas = requireElement('#screen', HTMLCanvasElement)
 const shadeCanvas = requireElement('#shade', HTMLCanvasElement)
 const sizeReadout = requireElement('#size', HTMLOutputElement)
+const loupe = requireElement('#loupe', HTMLDivElement)
+const loupeCanvas = requireElement('canvas', HTMLCanvasElement, loupe)
+const loupeLabel = requireElement('output', HTMLOutputElement, loupe)
 const actionBar = requireElement('#actions', HTMLDivElement)
 const hint = requireElement('#hint', HTMLParagraphElement)
 const screenContext = memoryBackedContext(screenCanvas)
 const shadeContext = memoryBackedContext(shadeCanvas)
+const loupeContext = memoryBackedContext(loupeCanvas)
 
 let bounds: Bounds = { width: 0, height: 0 }
 let selection: Region | null = null
@@ -48,6 +56,39 @@ function pixelsPerCssPixel(): number {
 function framePoint(event: PointerEvent | MouseEvent): Point {
   const scale = pixelsPerCssPixel()
   return { x: event.clientX * scale, y: event.clientY * scale }
+}
+
+function sizeLoupe(): void {
+  const devicePixels = Math.round(LOUPE_CSS_PIXELS * window.devicePixelRatio)
+  loupeCanvas.width = devicePixels
+  loupeCanvas.height = devicePixels
+  loupeCanvas.style.width = `${LOUPE_CSS_PIXELS}px`
+  loupeCanvas.style.height = `${LOUPE_CSS_PIXELS}px`
+}
+
+function loupeWanted(): boolean {
+  return selection === null || gesture.kind !== 'idle'
+}
+
+function followWithLoupe(event: PointerEvent): void {
+  if (!loupeWanted()) {
+    loupe.hidden = true
+    return
+  }
+  const point = framePoint(event)
+  const pixel = {
+    x: Math.min(Math.floor(point.x), bounds.width - 1),
+    y: Math.min(Math.floor(point.y), bounds.height - 1)
+  }
+  paintLoupe(loupeContext, screenCanvas, pixel)
+  loupeLabel.value = `${pixel.x}, ${pixel.y}`
+  loupe.hidden = false
+  const position = placeLoupe(
+    { x: event.clientX, y: event.clientY },
+    { width: loupe.offsetWidth, height: loupe.offsetHeight },
+    { width: window.innerWidth, height: window.innerHeight }
+  )
+  loupe.style.translate = `${position.x}px ${position.y}px`
 }
 
 function placeSizeReadout(rect: Region): void {
@@ -91,12 +132,16 @@ function render(): void {
   } else {
     actionBar.hidden = true
   }
+  if (!loupeWanted()) {
+    loupe.hidden = true
+  }
 }
 
 function resetSelection(): void {
   selection = null
   gesture = { kind: 'idle' }
   shadeCanvas.style.cursor = cursorFor(null)
+  loupe.hidden = true
   render()
 }
 
@@ -158,6 +203,7 @@ shadeCanvas.addEventListener('pointerdown', (event) => {
     selection = regionBetween(point, point, bounds)
   }
   render()
+  followWithLoupe(event)
 })
 
 shadeCanvas.addEventListener('pointermove', (event) => {
@@ -175,6 +221,11 @@ shadeCanvas.addEventListener('pointermove', (event) => {
       zoneAt(selection, point, GRAB_MARGIN_CSS_PIXELS * pixelsPerCssPixel())
     )
   }
+  followWithLoupe(event)
+})
+
+shadeCanvas.addEventListener('pointerleave', () => {
+  loupe.hidden = true
 })
 
 shadeCanvas.addEventListener('pointerup', () => {
@@ -209,6 +260,14 @@ window.addEventListener('keydown', (event) => {
     copyRegion()
   } else if (event.key.toLowerCase() === 't' && !event.ctrlKey && !event.altKey) {
     readRegionText()
+  } else if (selection && gesture.kind === 'idle') {
+    const step = event.ctrlKey ? FAST_NUDGE_PIXELS : 1
+    const nudged = nudgeRegion(selection, event.key, step, event.shiftKey, bounds)
+    if (nudged) {
+      event.preventDefault()
+      selection = nudged
+      render()
+    }
   }
 })
 
@@ -225,4 +284,5 @@ actionBar.addEventListener('click', (event) => {
 })
 
 window.addEventListener('resize', render)
+sizeLoupe()
 window.overlay.onFrame(showFrame)

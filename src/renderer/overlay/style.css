@@ -25,7 +25,8 @@ body {
   color: var(--ink);
 }
 
-canvas {
+#screen,
+#shade {
   position: fixed;
   inset: 0;
   width: 100vw;
@@ -60,6 +61,33 @@ kbd {
   pointer-events: none;
 }
 
+#loupe {
+  position: fixed;
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  pointer-events: none;
+}
+
+#loupe canvas {
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--surface);
+}
+
+#loupe output {
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: rgb(24 26 28 / 0.9);
+  color: var(--ink-dim);
+  font-family: 'Fira Sans Condensed', 'Fira Sans', sans-serif;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
 #actions {
   position: fixed;
   display: flex;
@@ -72,6 +100,7 @@ kbd {
 
 #actions[hidden],
 #size[hidden],
+#loupe[hidden],
 #hint[hidden] {
   display: none;
 }

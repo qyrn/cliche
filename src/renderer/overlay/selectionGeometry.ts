@@ -24,6 +24,13 @@ const ZONE_CURSORS: Record<DragZone, string> = {
   se: 'nwse-resize'
 }
 
+const ARROW_DIRECTIONS: Partial<Record<string, Point>> = {
+  ArrowLeft: { x: -1, y: 0 },
+  ArrowRight: { x: 1, y: 0 },
+  ArrowUp: { x: 0, y: -1 },
+  ArrowDown: { x: 0, y: 1 }
+}
+
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max)
 }
@@ -95,4 +102,27 @@ export function adjustRegion(
     right += deltaX
   }
   return regionFromEdges(left, top, right, bottom, bounds)
+}
+
+export function nudgeRegion(
+  region: Region,
+  key: string,
+  step: number,
+  resize: boolean,
+  bounds: Bounds
+): Region | null {
+  const direction = ARROW_DIRECTIONS[key]
+  if (!direction) {
+    return null
+  }
+  const deltaX = direction.x * step
+  const deltaY = direction.y * step
+  if (!resize) {
+    return adjustRegion(region, 'move', deltaX, deltaY, bounds)
+  }
+  return {
+    ...region,
+    width: clamp(region.width + deltaX, 1, bounds.width - region.x),
+    height: clamp(region.height + deltaY, 1, bounds.height - region.y)
+  }
 }
