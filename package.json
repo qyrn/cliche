@@ -1,6 +1,6 @@
 {
   "name": "cliche",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Captures d'écran rapides pour KDE Plasma Wayland, avec historique et OCR local",
   "author": "qyrn",
   "license": "MIT",
