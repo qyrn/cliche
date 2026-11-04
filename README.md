@@ -151,6 +151,8 @@ pnpm install:linux    # build, puis installe dans ~/Applications/cliche avec le 
 
 Les icônes sont dessinées dans `resources/source/icon.svg` et `resources/source/tray.svg`. Si tu les modifies, `sh scripts/render-icons.sh` régénère les PNG (il faut `rsvg-convert`).
 
+Pour refaire les captures du README : `CLICHE_SCREENSHOT=docs pnpm dev`. L'app dessine un faux bureau (`docs/scene`), y trace une sélection et remplit un historique de démo, enregistre `docs/hero.png` et `docs/history.png`, puis se ferme. Tout se passe hors écran, donc ton vrai écran et tes vraies captures ne sont jamais touchés.
+
 | Dossier                | Rôle                                                                        |
 | ---------------------- | --------------------------------------------------------------------------- |
 | `src/main`             | raccourci Impr, capture, presse-papiers, enregistrement, OCR, barre système |
@@ -160,6 +162,7 @@ Les icônes sont dessinées dans `resources/source/icon.svg` et `resources/sourc
 | `src/shared`           | types et canaux IPC partagés                                                |
 | `native`               | `kwin-grab`, le helper C qui demande l'image à KWin                         |
 | `scripts`              | installation dans `~/Applications`, génération des icônes                   |
+| `docs/scene`           | le faux bureau qui sert de fond aux captures du README                      |
 | `resources`            | icônes, et le helper compilé dans `resources/bin` (généré, pas versionné)   |
 
 </details>
