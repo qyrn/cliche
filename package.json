@@ -1,6 +1,6 @@
 {
   "name": "cliche",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Captures d'écran rapides pour KDE Plasma Wayland, avec historique et OCR local",
   "author": "qyrn",
   "license": "MIT",
@@ -50,10 +50,46 @@
     ],
     "linux": {
       "target": [
-        "dir"
+        "dir",
+        "pacman"
       ],
       "icon": "resources/icon.png",
-      "category": "Utility"
+      "category": "Utility",
+      "executableName": "cliche",
+      "synopsis": "Captures d'écran rapides pour KDE Plasma Wayland",
+      "maintainer": "qyrn",
+      "desktop": {
+        "entry": {
+          "Name": "cliché",
+          "Keywords": "screenshot;capture;ocr;",
+          "StartupWMClass": "cliche",
+          "Actions": "capture;"
+        },
+        "desktopActions": {
+          "capture": {
+            "Name": "Capturer une zone",
+            "Exec": "cliche --capture"
+          }
+        }
+      },
+      "description": "Captures d'écran avec historique et lecture du texte"
+    },
+    "pacman": {
+      "depends": [
+        "gtk3",
+        "nss",
+        "alsa-lib",
+        "libcups",
+        "libnotify",
+        "mesa",
+        "libxkbcommon",
+        "systemd-libs",
+        "glib2",
+        "wl-clipboard",
+        "tesseract",
+        "tesseract-data-fra",
+        "tesseract-data-eng"
+      ]
     }
   },
   "devDependencies": {

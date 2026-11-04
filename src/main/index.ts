@@ -1,4 +1,5 @@
 import { app, Menu } from 'electron'
+import { prepareLaunchAtLogin } from './autostart'
 import { registerCaptureFlow, startCapture } from './captureFlow'
 import { onTextsRead } from './captureIndexer'
 import { declareCaptureScheme, serveCaptureFiles } from './captureProtocol'
@@ -69,7 +70,10 @@ if (screenshotDirectory) {
     registerCaptureFlow()
     registerHistoryIpc(isHistoryWebContents)
     onTextsRead(notifyTextsRead)
-    createTray(() => app.quit())
+    await prepareLaunchAtLogin().catch((error: unknown) =>
+      console.error('Impossible de préparer le lancement au démarrage', error)
+    )
+    await createTray(() => app.quit())
     void warnAboutMissingTools()
     await bindPrintKey()
     handleLaunchArguments(process.argv)
