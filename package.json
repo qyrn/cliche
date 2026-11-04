@@ -1,6 +1,6 @@
 {
   "name": "cliche",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Fast screenshots for KDE Plasma on Wayland, with history and local text recognition",
   "author": "qyrn",
   "license": "MIT",
