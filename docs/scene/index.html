@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; style-src 'self'; img-src 'self'"
+    />
+    <title>Bureau des captures du README</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body data-capture="5">
+    <div class="wallpaper" aria-hidden="true">
+      <div class="ridge far"></div>
+      <div class="ridge near"></div>
+    </div>
+
+    <article class="window note" data-capture="4">
+      <header class="titlebar">
+        <span class="title">recette-crepes.md</span>
+        <span class="controls"><span></span><span></span><span></span></span>
+      </header>
+      <div class="page">
+        <div data-capture="8">
+          <h1>Pâte à crêpes</h1>
+          <p class="meta">Pour une quinzaine de crêpes, avec une heure de repos</p>
+        </div>
+        <section data-hero data-capture="1">
+          <h2>Ingrédients</h2>
+          <ul>
+            <li>250 g de farine</li>
+            <li>4 œufs</li>
+            <li>50 cl de lait</li>
+            <li>50 g de beurre fondu</li>
+            <li>1 pincée de sel</li>
+            <li>1 sachet de sucre vanillé</li>
+          </ul>
+        </section>
+        <section data-capture="6">
+          <h2>Étapes</h2>
+          <ol>
+            <li>Mets la farine dans un saladier et creuse un puits au milieu.</li>
+            <li>Casse les œufs dedans, puis verse le lait petit à petit en fouettant.</li>
+            <li>Ajoute le beurre fondu et le sel, et laisse reposer une heure.</li>
+            <li>Verse une petite louche de pâte dans une poêle bien chaude.</li>
+          </ol>
+        </section>
+      </div>
+    </article>
+
+    <article class="window terminal" data-capture="2">
+      <header class="titlebar">
+        <span class="title">Terminal</span>
+        <span class="controls"><span></span><span></span><span></span></span>
+      </header>
+      <pre><span class="prompt">~ $</span> tesseract --list-langs
+List of available languages in "/usr/share/tessdata/" (3):
+eng
+fra
+osd
+<span class="prompt">~ $</span> wl-paste
+Ingrédients
+250 g de farine
+4 œufs
+50 cl de lait
+<span class="prompt">~ $</span> <span class="cursor"> </span></pre>
+    </article>
+
+    <article class="window viewer" data-capture="3">
+      <header class="titlebar">
+        <span class="title">crepes-du-dimanche.jpg</span>
+        <span class="controls"><span></span><span></span><span></span></span>
+      </header>
+      <div class="photo" data-capture="7">
+        <div class="plate"><div class="crepe"></div></div>
+      </div>
+    </article>
+
+    <footer class="panel">
+      <span class="launcher"></span>
+      <span class="task active note-task"></span>
+      <span class="task terminal-task"></span>
+      <span class="task viewer-task"></span>
+      <span class="tray">
+        <img src="../../resources/source/tray.svg" width="22" height="22" alt="" />
+        <time>14:32</time>
+      </span>
+    </footer>
+  </body>
+</html>

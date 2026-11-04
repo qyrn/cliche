@@ -1,19 +1,11 @@
 import { readFile } from 'node:fs/promises'
-import { ipcMain, shell, type IpcMainInvokeEvent } from 'electron'
+import { ipcMain, shell, type IpcMainInvokeEvent, type WebContents } from 'electron'
 import { IpcChannel } from '../shared/types'
 import { captureDirectory, listCaptures, resolveCapturePath } from './captureStore'
 import { copyPngToClipboard } from './waylandClipboard'
-import { isHistoryWebContents } from './historyWindow'
 import { copyTextFromImage } from './textRecognition'
 
-function fromHistory<Result>(handler: (name: unknown) => Promise<Result>) {
-  return (event: IpcMainInvokeEvent, name: unknown): Promise<Result> => {
-    if (!isHistoryWebContents(event.sender)) {
-      return Promise.reject(new Error('Appel refusé'))
-    }
-    return handler(name)
-  }
-}
+type SenderCheck = (contents: WebContents) => boolean
 
 async function openPath(path: string): Promise<void> {
   const failure = await shell.openPath(path)
@@ -22,7 +14,12 @@ async function openPath(path: string): Promise<void> {
   }
 }
 
-export function registerHistoryIpc(): void {
+export function registerHistoryIpc(isHistorySender: SenderCheck): void {
+  const fromHistory =
+    <Result>(handler: (name: unknown) => Promise<Result>) =>
+    (event: IpcMainInvokeEvent, name: unknown): Promise<Result> =>
+      isHistorySender(event.sender) ? handler(name) : Promise.reject(new Error('Appel refusé'))
+
   ipcMain.handle(
     IpcChannel.HistoryList,
     fromHistory(() => listCaptures())

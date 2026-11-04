@@ -3,13 +3,15 @@ import { registerCaptureFlow, startCapture } from './captureFlow'
 import { declareCaptureScheme, serveCaptureFiles } from './captureProtocol'
 import { registerCaptureShortcut, releaseCaptureShortcut } from './globalShortcut'
 import { registerHistoryIpc } from './historyIpc'
-import { showHistoryWindow } from './historyWindow'
+import { isHistoryWebContents, showHistoryWindow } from './historyWindow'
 import { notify } from './notify'
 import { prepareOverlay } from './overlayWindow'
+import { runScreenshotMode } from './screenshotMode'
 import { createTray } from './tray'
 
 const CAPTURE_FLAG = '--capture'
 const HIDDEN_FLAG = '--hidden'
+const screenshotDirectory = process.env['CLICHE_SCREENSHOT']
 
 function handleLaunchArguments(argv: string[]): void {
   if (argv.includes(CAPTURE_FLAG)) {
@@ -30,15 +32,17 @@ async function bindPrintKey(): Promise<void> {
 }
 
 declareCaptureScheme()
+app.on('web-contents-created', (_event, contents) => {
+  contents.setWindowOpenHandler(() => ({ action: 'deny' }))
+  contents.on('will-navigate', (event) => event.preventDefault())
+})
 
-if (!app.requestSingleInstanceLock()) {
+if (screenshotDirectory) {
+  runScreenshotMode(screenshotDirectory)
+} else if (!app.requestSingleInstanceLock()) {
   app.quit()
 } else {
   app.on('second-instance', (_event, argv) => handleLaunchArguments(argv))
-  app.on('web-contents-created', (_event, contents) => {
-    contents.setWindowOpenHandler(() => ({ action: 'deny' }))
-    contents.on('will-navigate', (event) => event.preventDefault())
-  })
   app.on('will-quit', releaseCaptureShortcut)
   for (const signal of ['SIGINT', 'SIGTERM'] as const) {
     process.on(signal, () => app.quit())
@@ -48,7 +52,7 @@ if (!app.requestSingleInstanceLock()) {
     serveCaptureFiles()
     prepareOverlay()
     registerCaptureFlow()
-    registerHistoryIpc()
+    registerHistoryIpc(isHistoryWebContents)
     createTray(() => app.quit())
     await bindPrintKey()
     handleLaunchArguments(process.argv)
