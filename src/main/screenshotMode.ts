@@ -1,6 +1,7 @@
 import { mkdtempSync } from 'node:fs'
 import { mkdir, rm, utimes } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
+import { setTimeout as delay } from 'node:timers/promises'
 import { join, resolve } from 'node:path'
 import {
   app,
@@ -12,7 +13,8 @@ import {
   type Size
 } from 'electron'
 import { IpcChannel, type Region } from '../shared/types'
-import { saveCapture } from './captureStore'
+import { knownTexts, onTextsRead } from './captureIndexer'
+import { listCaptures, saveCapture } from './captureStore'
 import { serveCaptureFiles } from './captureProtocol'
 import { imageOfRegion } from './frameRegion'
 import { registerHistoryIpc } from './historyIpc'
@@ -35,6 +37,16 @@ const BLUR_MODE_SHOWN = "!document.querySelector('#blur-hint').hidden"
 const BLUR_SHOT_MARGIN_PIXELS = 40
 const BLUR_SHOT_BAR_ROOM_PIXELS = 80
 const BLUR_PADDING_PIXELS = 3
+const SEARCH_QUERY = 'vanille'
+const TEXT_READING_TIMEOUT_MS = 60_000
+const TEXT_READING_POLL_MS = 250
+const COUNT_SETTLED = "!document.querySelector('#count').textContent.includes('à lire')"
+const SEARCH_APPLIED = "document.querySelector('#count').textContent.includes(' sur ')"
+const TYPE_SEARCH_QUERY = `(() => {
+  const input = document.querySelector('#search')
+  input.value = '${SEARCH_QUERY}'
+  input.dispatchEvent(new Event('input'))
+})()`
 const VISIBLE_THUMBNAILS_LOADED = `document.querySelectorAll('.frame').length > 0 &&
   [...document.images]
     .filter((image) => image.getBoundingClientRect().top < window.innerHeight)
@@ -153,12 +165,33 @@ async function photographSelection(scene: Scene, outputDirectory: string): Promi
   })
 }
 
-async function photographHistory(path: string): Promise<void> {
+async function waitUntilEveryCaptureIsRead(): Promise<void> {
+  const deadline = Date.now() + TEXT_READING_TIMEOUT_MS
+  for (;;) {
+    const entries = await listCaptures()
+    const known = await knownTexts(entries)
+    if (known.remaining === 0 && Object.keys(known.texts).length === entries.length) {
+      return
+    }
+    if (Date.now() > deadline) {
+      throw new Error("Tesseract n'a pas fini de lire les captures de démo")
+    }
+    await delay(TEXT_READING_POLL_MS)
+  }
+}
+
+async function photographHistory(outputDirectory: string): Promise<void> {
   const window = createOffscreenWindow(HISTORY_SIZE, rendererWebPreferences('history'))
   registerHistoryIpc((contents) => contents === window.webContents)
+  onTextsRead((update) => window.webContents.send(IpcChannel.HistoryTextsRead, update))
   await loadRendererPage(window, 'history')
   await waitForPage(window, VISIBLE_THUMBNAILS_LOADED)
-  await savePageImage(window, path)
+  await waitUntilEveryCaptureIsRead()
+  await waitForPage(window, COUNT_SETTLED)
+  await savePageImage(window, join(outputDirectory, 'history.png'))
+  await window.webContents.executeJavaScript(TYPE_SEARCH_QUERY)
+  await waitForPage(window, SEARCH_APPLIED)
+  await savePageImage(window, join(outputDirectory, 'search.png'))
 }
 
 async function photographReadme(outputDirectory: string, workspace: string): Promise<void> {
@@ -168,7 +201,7 @@ async function photographReadme(outputDirectory: string, workspace: string): Pro
     const scene = await renderScene()
     await seedHistory(scene)
     await photographSelection(scene, outputDirectory)
-    await photographHistory(join(outputDirectory, 'history.png'))
+    await photographHistory(outputDirectory)
   } finally {
     await rm(workspace, { recursive: true, force: true })
   }
