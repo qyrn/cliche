@@ -38,7 +38,7 @@ Une fois la zone tracée, tu peux la déplacer, tirer sur un bord ou un coin, ou
 | `Maj` + flèches                                | Agrandir ou réduire la zone                  |
 | `Entrée`, `Ctrl+C` ou double-clic dans la zone | Copier et enregistrer                        |
 | `T`                                            | Copier le texte de la zone                   |
-| `B`                                            | Flouter une partie de la zone                |
+| `B`                                            | Flouter les infos perso, puis ce que tu veux |
 | `Échap` ou clic droit                          | Annuler                                      |
 
 ## 🪟 Capturer une fenêtre d'un clic
@@ -53,13 +53,16 @@ Passe la souris sur une fenêtre, elle s'éclaire avec sa taille au-dessus. Un c
 
 ## 🌫️ Flouter avant de copier
 
-Un mot de passe, un nom, une adresse qui traîne dans la capture ? Appuie sur `B` (ou sur Flouter dans la barre), puis glisse sur ce que tu veux cacher. La zone part en gros pixels tout de suite, et c'est comme ça qu'elle arrive dans le presse-papiers et dans le fichier enregistré.
+Appuie sur `B` (ou sur Flouter dans la barre) : cliché lit la zone et floute tout seul les adresses mail, numéros de téléphone, IBAN, numéros de carte et clés d'API qu'il y trouve. En bas de l'écran, il te dit combien il en a caché.
 
 <div align="center">
-<img src="docs/blur.png" width="600" alt="Une sélection sur une recette où la dernière ligne est floutée en gros pixels, avec le bouton Flouter allumé dans la barre" />
+<img src="docs/blur.png" width="600" alt="L'en-tête d'une recette où l'adresse mail et le numéro de téléphone de Camille sont floutés en gros pixels, avec le bouton Flouter allumé" />
 </div>
 
-`Ctrl+Z` retire le dernier flou, et un nouvel appui sur `B` te rend la main pour ajuster la zone.
+Il en a raté un, ou tu veux cacher autre chose ? Glisse dessus, ça part en gros pixels aussi. `Ctrl+Z` retire le dernier flou, et un nouvel appui sur `B` te rend la main pour ajuster la zone. Si tu appuies sur Entrée pendant qu'il cherche encore, la copie attend qu'il ait fini, comme ça rien ne part en clair.
+
+> [!NOTE]
+> cliché ne repère que ce que Tesseract arrive à lire. Sur un texte minuscule ou flou, jette quand même un œil avant d'envoyer.
 
 ## 🔤 Copier le texte d'une image
 

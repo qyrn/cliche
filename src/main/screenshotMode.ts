@@ -18,6 +18,7 @@ import { listCaptures, saveCapture } from './captureStore'
 import { serveCaptureFiles } from './captureProtocol'
 import { imageOfRegion } from './frameRegion'
 import { registerHistoryIpc } from './historyIpc'
+import { scanFrameForPersonalInfo } from './personalInfoScan'
 import { createOffscreenWindow, savePageImage, waitForPage } from './offscreenPage'
 import { loadRendererPage, rendererWebPreferences } from './rendererPage'
 import { renderScene, SCENE_SIZE, type Scene } from './screenshotScene'
@@ -33,10 +34,9 @@ const LOUPE_AIM_INSET_PIXELS = 7
 const ACTION_BAR_SHOWN = "!document.querySelector('#actions').hidden"
 const LOUPE_SHOWN = "!document.querySelector('#loupe').hidden"
 const SIZE_SHOWN = "!document.querySelector('#size').hidden"
-const BLUR_MODE_SHOWN = "!document.querySelector('#blur-hint').hidden"
+const PERSONAL_INFO_BLURRED = "document.querySelector('#blur-status').textContent.includes('floutée')"
 const BLUR_SHOT_MARGIN_PIXELS = 40
 const BLUR_SHOT_BAR_ROOM_PIXELS = 80
-const BLUR_PADDING_PIXELS = 3
 const SEARCH_QUERY = 'vanille'
 const TEXT_READING_TIMEOUT_MS = 60_000
 const TEXT_READING_POLL_MS = 250
@@ -154,14 +154,21 @@ async function photographSelection(scene: Scene, outputDirectory: string): Promi
   window.webContents.sendInputEvent({ type: 'mouseUp', ...end, button: 'left', clickCount: 1 })
   await waitForPage(window, ACTION_BAR_SHOWN)
   await savePageImage(window, join(outputDirectory, 'hero.png'))
+  ipcMain.handle(IpcChannel.OverlayFindPersonalInfo, (event, payload: unknown) =>
+    event.sender === window.webContents
+      ? scanFrameForPersonalInfo(scene.frame, payload)
+      : Promise.reject(new Error('Appel refusé'))
+  )
+  const blurZone = paddedRegion(scene.blurZone, SELECTION_PADDING_PIXELS)
+  dragAcross(window, blurZone)
+  await waitForPage(window, ACTION_BAR_SHOWN)
   window.webContents.sendInputEvent({ type: 'keyDown', keyCode: 'B' })
-  dragAcross(window, paddedRegion(scene.blurTarget, BLUR_PADDING_PIXELS))
-  await waitForPage(window, BLUR_MODE_SHOWN)
+  await waitForPage(window, PERSONAL_INFO_BLURRED)
   await savePageImage(window, join(outputDirectory, 'blur.png'), {
-    x: selection.x - BLUR_SHOT_MARGIN_PIXELS,
-    y: selection.y - BLUR_SHOT_MARGIN_PIXELS,
-    width: selection.width + BLUR_SHOT_MARGIN_PIXELS * 2,
-    height: selection.height + BLUR_SHOT_MARGIN_PIXELS + BLUR_SHOT_BAR_ROOM_PIXELS
+    x: blurZone.x - BLUR_SHOT_MARGIN_PIXELS,
+    y: blurZone.y - BLUR_SHOT_MARGIN_PIXELS,
+    width: blurZone.width + BLUR_SHOT_MARGIN_PIXELS * 2,
+    height: blurZone.height + BLUR_SHOT_MARGIN_PIXELS + BLUR_SHOT_BAR_ROOM_PIXELS
   })
 }
 
