@@ -4,6 +4,7 @@ import { declareCaptureScheme, serveCaptureFiles } from './captureProtocol'
 import { registerCaptureShortcut, releaseCaptureShortcut } from './globalShortcut'
 import { registerHistoryIpc } from './historyIpc'
 import { isHistoryWebContents, showHistoryWindow } from './historyWindow'
+import { findMissingPackages } from './missingTools'
 import { notify } from './notify'
 import { prepareOverlay } from './overlayWindow'
 import { runScreenshotMode } from './screenshotMode'
@@ -33,6 +34,16 @@ async function bindPrintKey(): Promise<void> {
   }
 }
 
+async function warnAboutMissingTools(): Promise<void> {
+  const missingPackages = await findMissingPackages()
+  if (missingPackages.length > 0) {
+    notify(
+      'Il manque des outils à cliché',
+      `Installe ${missingPackages.join(', ')} pour que la copie et la lecture du texte marchent.`
+    )
+  }
+}
+
 declareCaptureScheme()
 app.on('web-contents-created', (_event, contents) => {
   contents.setWindowOpenHandler(() => ({ action: 'deny' }))
@@ -57,6 +68,7 @@ if (screenshotDirectory) {
     registerCaptureFlow()
     registerHistoryIpc(isHistoryWebContents)
     createTray(() => app.quit())
+    void warnAboutMissingTools()
     await bindPrintKey()
     handleLaunchArguments(process.argv)
   })

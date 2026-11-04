@@ -1,9 +1,10 @@
 import { spawn } from 'node:child_process'
+import { isCommandNotFound, missingToolError } from './systemTools'
 
 function wlCopy(data: Buffer | string, mimeType: string): Promise<void> {
   return new Promise((resolve, reject) => {
     const child = spawn('wl-copy', ['--type', mimeType], { stdio: ['pipe', 'ignore', 'ignore'] })
-    child.on('error', reject)
+    child.on('error', (error) => reject(isCommandNotFound(error) ? missingToolError('wl-copy') : error))
     child.on('exit', (exitCode) => {
       if (exitCode === 0) {
         resolve()
