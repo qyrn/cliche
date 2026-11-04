@@ -12,6 +12,7 @@ export interface Scene {
   heroRegion: Region
   loupeTarget: Region
   hoverTarget: Region
+  blurTarget: Region
   sampleRegions: Region[]
 }
 
@@ -33,6 +34,7 @@ const MEASURE_TARGETS = `(() => {
   const hero = document.querySelector('[data-hero]')
   const loupe = document.querySelector('[data-loupe]')
   const hover = document.querySelector('[data-hover]')
+  const blur = document.querySelector('[data-blur]')
   const windows = [...document.querySelectorAll('[data-window]')].map(regionOf)
   const samples = [...document.querySelectorAll('[data-capture]')]
     .sort((first, second) => Number(first.dataset.capture) - Number(second.dataset.capture))
@@ -41,6 +43,7 @@ const MEASURE_TARGETS = `(() => {
     hero: hero ? regionOf(hero) : null,
     loupe: loupe ? regionOf(loupe) : null,
     hover: hover ? regionOf(hover) : null,
+    blur: blur ? regionOf(blur) : null,
     windows,
     samples
   }
@@ -72,19 +75,21 @@ function targetsWithin(measured: unknown, frame: ScenePixels): SceneTargets {
     !('hero' in measured) ||
     !('loupe' in measured) ||
     !('hover' in measured) ||
+    !('blur' in measured) ||
     !('windows' in measured) ||
     !('samples' in measured) ||
     !Array.isArray(measured.windows) ||
     !Array.isArray(measured.samples)
   ) {
     throw new Error(
-      'Scène illisible : il manque data-hero, data-loupe, data-hover, data-window ou data-capture'
+      'Scène illisible : il manque une cible data-hero, data-loupe, data-hover, data-blur, data-window ou data-capture'
     )
   }
   return {
     heroRegion: toRegionWithin(measured.hero, frame),
     loupeTarget: toRegionWithin(measured.loupe, frame),
     hoverTarget: toRegionWithin(measured.hover, frame),
+    blurTarget: toRegionWithin(measured.blur, frame),
     windows: measured.windows.map((region: unknown) => toRegionWithin(region, frame)).reverse(),
     sampleRegions: measured.samples.map((region: unknown) => toRegionWithin(region, frame))
   }

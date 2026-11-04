@@ -31,6 +31,10 @@ const LOUPE_AIM_INSET_PIXELS = 7
 const ACTION_BAR_SHOWN = "!document.querySelector('#actions').hidden"
 const LOUPE_SHOWN = "!document.querySelector('#loupe').hidden"
 const SIZE_SHOWN = "!document.querySelector('#size').hidden"
+const BLUR_MODE_SHOWN = "!document.querySelector('#blur-hint').hidden"
+const BLUR_SHOT_MARGIN_PIXELS = 40
+const BLUR_SHOT_BAR_ROOM_PIXELS = 80
+const BLUR_PADDING_PIXELS = 3
 const VISIBLE_THUMBNAILS_LOADED = `document.querySelectorAll('.frame').length > 0 &&
   [...document.images]
     .filter((image) => image.getBoundingClientRect().top < window.innerHeight)
@@ -88,6 +92,19 @@ function frameDrawnBy(window: BrowserWindow): Promise<void> {
   })
 }
 
+function dragAcross(window: BrowserWindow, region: Region): void {
+  const end = { x: region.x + region.width, y: region.y + region.height }
+  window.webContents.sendInputEvent({
+    type: 'mouseDown',
+    x: region.x,
+    y: region.y,
+    button: 'left',
+    clickCount: 1
+  })
+  window.webContents.sendInputEvent({ type: 'mouseMove', ...end, button: 'left' })
+  window.webContents.sendInputEvent({ type: 'mouseUp', ...end, button: 'left', clickCount: 1 })
+}
+
 function areaAround(point: Point, size: Size): Rectangle {
   return {
     x: Math.max(0, Math.min(point.x - LOUPE_SHOT_LEAD_PIXELS, SCENE_SIZE.width - size.width)),
@@ -125,6 +142,15 @@ async function photographSelection(scene: Scene, outputDirectory: string): Promi
   window.webContents.sendInputEvent({ type: 'mouseUp', ...end, button: 'left', clickCount: 1 })
   await waitForPage(window, ACTION_BAR_SHOWN)
   await savePageImage(window, join(outputDirectory, 'hero.png'))
+  window.webContents.sendInputEvent({ type: 'keyDown', keyCode: 'B' })
+  dragAcross(window, paddedRegion(scene.blurTarget, BLUR_PADDING_PIXELS))
+  await waitForPage(window, BLUR_MODE_SHOWN)
+  await savePageImage(window, join(outputDirectory, 'blur.png'), {
+    x: selection.x - BLUR_SHOT_MARGIN_PIXELS,
+    y: selection.y - BLUR_SHOT_MARGIN_PIXELS,
+    width: selection.width + BLUR_SHOT_MARGIN_PIXELS * 2,
+    height: selection.height + BLUR_SHOT_MARGIN_PIXELS + BLUR_SHOT_BAR_ROOM_PIXELS
+  })
 }
 
 async function photographHistory(path: string): Promise<void> {
