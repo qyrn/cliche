@@ -22,6 +22,7 @@ import { scanFrameForPersonalInfo } from './personalInfoScan'
 import { createOffscreenWindow, savePageImage, waitForPage } from './offscreenPage'
 import { loadRendererPage, rendererWebPreferences } from './rendererPage'
 import { renderScene, SCENE_SIZE, type Scene } from './screenshotScene'
+import { uiText } from './uiText'
 
 const HISTORY_SIZE: Size = { width: 1080, height: 720 }
 const SELECTION_PADDING_PIXELS = 16
@@ -34,14 +35,11 @@ const LOUPE_AIM_INSET_PIXELS = 7
 const ACTION_BAR_SHOWN = "!document.querySelector('#actions').hidden"
 const LOUPE_SHOWN = "!document.querySelector('#loupe').hidden"
 const SIZE_SHOWN = "!document.querySelector('#size').hidden"
-const PERSONAL_INFO_BLURRED = "document.querySelector('#blur-status').textContent.includes('floutée')"
 const BLUR_SHOT_MARGIN_PIXELS = 40
 const BLUR_SHOT_BAR_ROOM_PIXELS = 80
 const SEARCH_QUERY = 'vanille'
 const TEXT_READING_TIMEOUT_MS = 60_000
 const TEXT_READING_POLL_MS = 250
-const COUNT_SETTLED = "!document.querySelector('#count').textContent.includes('à lire')"
-const SEARCH_APPLIED = "document.querySelector('#count').textContent.includes(' sur ')"
 const TYPE_SEARCH_QUERY = `(() => {
   const input = document.querySelector('#search')
   input.value = '${SEARCH_QUERY}'
@@ -163,7 +161,7 @@ async function photographSelection(scene: Scene, outputDirectory: string): Promi
   dragAcross(window, blurZone)
   await waitForPage(window, ACTION_BAR_SHOWN)
   window.webContents.sendInputEvent({ type: 'keyDown', keyCode: 'B' })
-  await waitForPage(window, PERSONAL_INFO_BLURRED)
+  await waitForPage(window, blurStatusSettled())
   await savePageImage(window, join(outputDirectory, 'blur.png'), {
     x: blurZone.x - BLUR_SHOT_MARGIN_PIXELS,
     y: blurZone.y - BLUR_SHOT_MARGIN_PIXELS,
@@ -187,17 +185,30 @@ async function waitUntilEveryCaptureIsRead(): Promise<void> {
   }
 }
 
-async function photographHistory(outputDirectory: string): Promise<void> {
+function countShows(label: string): string {
+  return `(document.querySelector('#count').textContent === ${JSON.stringify(label)})`
+}
+
+function blurStatusSettled(): string {
+  const searching = JSON.stringify(uiText().searchingPersonalInfo)
+  return `(() => {
+    const status = document.querySelector('#blur-status').textContent
+    return status !== '' && status !== ${searching}
+  })()`
+}
+
+async function photographHistory(scene: Scene, outputDirectory: string): Promise<void> {
   const window = createOffscreenWindow(HISTORY_SIZE, rendererWebPreferences('history'))
   registerHistoryIpc((contents) => contents === window.webContents)
   onTextsRead((update) => window.webContents.send(IpcChannel.HistoryTextsRead, update))
   await loadRendererPage(window, 'history')
   await waitForPage(window, VISIBLE_THUMBNAILS_LOADED)
   await waitUntilEveryCaptureIsRead()
-  await waitForPage(window, COUNT_SETTLED)
+  const allCaptures = uiText().captureCount(scene.sampleRegions.length)
+  await waitForPage(window, countShows(allCaptures))
   await savePageImage(window, join(outputDirectory, 'history.png'))
   await window.webContents.executeJavaScript(TYPE_SEARCH_QUERY)
-  await waitForPage(window, SEARCH_APPLIED)
+  await waitForPage(window, `!${countShows(allCaptures)}`)
   await savePageImage(window, join(outputDirectory, 'search.png'))
 }
 
@@ -208,7 +219,7 @@ async function photographReadme(outputDirectory: string, workspace: string): Pro
     const scene = await renderScene()
     await seedHistory(scene)
     await photographSelection(scene, outputDirectory)
-    await photographHistory(outputDirectory)
+    await photographHistory(scene, outputDirectory)
   } finally {
     await rm(workspace, { recursive: true, force: true })
   }
