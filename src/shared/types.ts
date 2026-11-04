@@ -3,6 +3,7 @@ export const IpcChannel = {
   OverlayFrameDrawn: 'overlay:frame-drawn',
   OverlayCopy: 'overlay:copy',
   OverlayReadText: 'overlay:read-text',
+  OverlayFindPersonalInfo: 'overlay:find-personal-info',
   OverlayDismiss: 'overlay:dismiss',
   HistoryList: 'history:list',
   HistoryCopyImage: 'history:copy-image',
@@ -50,6 +51,7 @@ export interface OverlayBridge {
   frameDrawn(): void
   copy(request: ExportRequest): void
   readText(request: ExportRequest): void
+  findPersonalInfo(zone: Region): Promise<Region[]>
   dismiss(): void
 }
 

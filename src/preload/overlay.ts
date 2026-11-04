@@ -8,6 +8,7 @@ const overlayBridge: OverlayBridge = {
   frameDrawn: () => ipcRenderer.send(IpcChannel.OverlayFrameDrawn),
   copy: (request) => ipcRenderer.send(IpcChannel.OverlayCopy, request),
   readText: (request) => ipcRenderer.send(IpcChannel.OverlayReadText, request),
+  findPersonalInfo: (zone) => ipcRenderer.invoke(IpcChannel.OverlayFindPersonalInfo, zone),
   dismiss: () => ipcRenderer.send(IpcChannel.OverlayDismiss)
 }
 

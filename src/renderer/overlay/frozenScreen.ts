@@ -3,7 +3,7 @@ import type { Region } from '../../shared/types'
 
 export interface FrozenScreen {
   show(pixels: Uint8ClampedArray<ArrayBuffer>, width: number, height: number): void
-  addBlur(area: Region): void
+  addBlurs(areas: Region[]): void
   removeLastBlur(): void
   blurs(): Region[]
   clear(): void
@@ -29,9 +29,11 @@ export function frozenScreen(context: CanvasRenderingContext2D): FrozenScreen {
       blurAreas = []
       repaint()
     },
-    addBlur(area) {
-      blurAreas = [...blurAreas, area]
-      repaint()
+    addBlurs(areas) {
+      if (areas.length > 0) {
+        blurAreas = [...blurAreas, ...areas]
+        repaint()
+      }
     },
     removeLastBlur() {
       if (blurAreas.length > 0) {

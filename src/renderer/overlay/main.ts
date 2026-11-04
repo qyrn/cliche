@@ -38,6 +38,7 @@ const actionBar = requireElement('#actions', HTMLDivElement)
 const blurButton = requireElement('[data-action="blur"]', HTMLButtonElement, actionBar)
 const hint = requireElement('#hint', HTMLParagraphElement)
 const blurHint = requireElement('#blur-hint', HTMLParagraphElement)
+const blurStatus = requireElement('#blur-status', HTMLSpanElement)
 const screenContext = memoryBackedContext(screenCanvas)
 const shadeContext = memoryBackedContext(shadeCanvas)
 const loupeContext = memoryBackedContext(loupeCanvas)
@@ -49,6 +50,10 @@ let gesture: Gesture = { kind: 'idle' }
 let windows: Region[] = []
 let hoveredWindow: Region | null = null
 let blurring = false
+let detectionRound = 0
+let detectedZone: string | null = null
+let pendingDetection: Promise<void> = Promise.resolve()
+let finishing = false
 let blurDraft: Region | null = null
 
 function memoryBackedContext(canvas: HTMLCanvasElement): CanvasRenderingContext2D {
@@ -158,6 +163,10 @@ function resetSelection(): void {
   hoveredWindow = null
   blurring = false
   blurDraft = null
+  detectionRound += 1
+  detectedZone = null
+  pendingDetection = Promise.resolve()
+  blurStatus.textContent = ''
   gesture = { kind: 'idle' }
   shadeCanvas.style.cursor = cursorFor(null)
   loupe.hidden = true
@@ -194,24 +203,70 @@ function close(): void {
   window.overlay.dismiss()
 }
 
-function finishWith(send: (request: ExportRequest) => void): void {
-  const request = { region: regionToExport(), blurs: frozen.blurs() }
-  clearOverlay()
-  send(request)
+async function finishWith(send: (request: ExportRequest) => void): Promise<void> {
+  if (finishing) {
+    return
+  }
+  finishing = true
+  const round = detectionRound
+  try {
+    await pendingDetection
+    if (round !== detectionRound) {
+      return
+    }
+    const request = { region: regionToExport(), blurs: frozen.blurs() }
+    clearOverlay()
+    send(request)
+  } finally {
+    finishing = false
+  }
+}
+
+function describeFoundInfo(count: number): string {
+  if (count === 0) {
+    return 'Aucune info perso repérée'
+  }
+  return count === 1 ? '1 info perso floutée' : `${count} infos perso floutées`
+}
+
+function blurPersonalInfo(zone: Region): void {
+  const zoneKey = `${zone.x},${zone.y},${zone.width},${zone.height}`
+  if (zoneKey === detectedZone) {
+    return
+  }
+  detectedZone = zoneKey
+  const round = detectionRound
+  blurStatus.textContent = 'Recherche des infos perso…'
+  pendingDetection = window.overlay.findPersonalInfo(zone).then(
+    (areas) => {
+      if (round === detectionRound) {
+        frozen.addBlurs(areas)
+        blurStatus.textContent = describeFoundInfo(areas.length)
+      }
+    },
+    () => {
+      if (round === detectionRound) {
+        blurStatus.textContent = 'Impossible de chercher les infos perso'
+      }
+    }
+  )
 }
 
 function toggleBlurring(): void {
   blurring = !blurring
+  if (blurring && selection) {
+    blurPersonalInfo(selection)
+  }
   shadeCanvas.style.cursor = blurring ? 'crosshair' : cursorFor(null)
   render()
 }
 
 function copyRegion(): void {
-  finishWith(window.overlay.copy)
+  void finishWith(window.overlay.copy)
 }
 
 function readRegionText(): void {
-  finishWith(window.overlay.readText)
+  void finishWith(window.overlay.readText)
 }
 
 shadeCanvas.addEventListener('pointerdown', (event) => {
@@ -271,7 +326,7 @@ shadeCanvas.addEventListener('pointerup', (event) => {
   }
   if (gesture.kind === 'blurring') {
     if (blurDraft && blurDraft.width >= MIN_SELECTION_PIXELS && blurDraft.height >= MIN_SELECTION_PIXELS) {
-      frozen.addBlur(blurDraft)
+      frozen.addBlurs([blurDraft])
     }
     blurDraft = null
   } else if (

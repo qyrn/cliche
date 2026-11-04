@@ -3,7 +3,7 @@ import type { ExportRequest, Region } from '../shared/types'
 import type { CapturedFrame } from './screenGrab'
 
 const OPAQUE_ALPHA = 0xff000000
-const MAX_BLURS = 64
+const MAX_BLURS = 500
 
 function isRegion(value: unknown): value is Region {
   if (typeof value !== 'object' || value === null) {

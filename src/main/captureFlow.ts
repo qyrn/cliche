@@ -3,7 +3,7 @@ import { relative } from 'node:path'
 import { setTimeout as delay } from 'node:timers/promises'
 import { ipcMain, type IpcMainEvent, type NativeImage } from 'electron'
 import { pixelate } from '../shared/pixelate'
-import { IpcChannel } from '../shared/types'
+import { IpcChannel, type Region } from '../shared/types'
 import { readNewCaptureFirst } from './captureIndexer'
 import { captureDirectory, saveCapture } from './captureStore'
 import { copyPngToClipboard } from './waylandClipboard'
@@ -18,6 +18,7 @@ import {
   sendFrameToOverlay,
   whenOverlayReady
 } from './overlayWindow'
+import { scanFrameForPersonalInfo } from './personalInfoScan'
 import { grabActiveScreen, type CapturedFrame } from './screenGrab'
 import { copyTextFromImage } from './textRecognition'
 
@@ -117,6 +118,10 @@ async function readTextFrom(image: NativeImage): Promise<void> {
   }
 }
 
+function personalInfoIn(payload: unknown): Promise<Region[]> {
+  return pendingFrame ? scanFrameForPersonalInfo(pendingFrame, payload) : Promise.resolve([])
+}
+
 function fromOverlay(handler: (payload: unknown) => Promise<void> | void) {
   return (event: IpcMainEvent, payload: unknown): void => {
     if (!isOverlayWebContents(event.sender)) {
@@ -140,6 +145,9 @@ export function registerCaptureFlow(): void {
   ipcMain.on(
     IpcChannel.OverlayCopy,
     fromOverlay(async (payload) => copyAndSave(await takeRegion(payload)))
+  )
+  ipcMain.handle(IpcChannel.OverlayFindPersonalInfo, (event, payload: unknown) =>
+    isOverlayWebContents(event.sender) ? personalInfoIn(payload) : Promise.reject(new Error('Appel refusé'))
   )
   ipcMain.on(
     IpcChannel.OverlayReadText,

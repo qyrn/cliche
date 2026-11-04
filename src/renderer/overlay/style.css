@@ -159,6 +159,15 @@ kbd {
   white-space: nowrap;
 }
 
+.hint .status {
+  color: var(--pencil);
+  font-size: 13px;
+}
+
+.hint .status:empty {
+  display: none;
+}
+
 .hint .legend {
   color: var(--ink-dim);
   font-size: 13px;

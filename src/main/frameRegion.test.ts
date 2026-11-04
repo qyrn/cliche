@@ -43,7 +43,7 @@ describe('toExportRequestWithin', () => {
 
   it('refuses a request without blurs or with too many of them', () => {
     expect(() => toExportRequestWithin({ region }, frame)).toThrow('Demande de capture invalide')
-    expect(() => toExportRequestWithin({ region, blurs: Array(65).fill(region) }, frame)).toThrow(
+    expect(() => toExportRequestWithin({ region, blurs: Array(501).fill(region) }, frame)).toThrow(
       'Demande de capture invalide'
     )
   })
