@@ -10,6 +10,7 @@ export const SCENE_SIZE: Size = { width: 1440, height: 900 }
 export interface Scene {
   frame: CapturedFrame
   heroRegion: Region
+  loupeTarget: Region
   sampleRegions: Region[]
 }
 
@@ -26,10 +27,11 @@ const MEASURE_TARGETS = `(() => {
     }
   }
   const hero = document.querySelector('[data-hero]')
+  const loupe = document.querySelector('[data-loupe]')
   const samples = [...document.querySelectorAll('[data-capture]')]
     .sort((first, second) => Number(first.dataset.capture) - Number(second.dataset.capture))
     .map(regionOf)
-  return { hero: hero ? regionOf(hero) : null, samples }
+  return { hero: hero ? regionOf(hero) : null, loupe: loupe ? regionOf(loupe) : null, samples }
 })()`
 
 function swapRedAndBlue(bitmap: Buffer): Buffer {
@@ -56,13 +58,15 @@ function targetsWithin(measured: unknown, frame: CapturedFrame): Omit<Scene, 'fr
     typeof measured !== 'object' ||
     measured === null ||
     !('hero' in measured) ||
+    !('loupe' in measured) ||
     !('samples' in measured) ||
     !Array.isArray(measured.samples)
   ) {
-    throw new Error('Scène illisible : il manque data-hero ou data-capture')
+    throw new Error('Scène illisible : il manque data-hero, data-loupe ou data-capture')
   }
   return {
     heroRegion: toRegionWithin(measured.hero, frame),
+    loupeTarget: toRegionWithin(measured.loupe, frame),
     sampleRegions: measured.samples.map((region: unknown) => toRegionWithin(region, frame))
   }
 }

@@ -2,7 +2,15 @@ import { mkdtempSync } from 'node:fs'
 import { mkdir, rm, utimes } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
-import { app, ipcMain, type BrowserWindow, type IpcMainEvent, type Size } from 'electron'
+import {
+  app,
+  ipcMain,
+  type BrowserWindow,
+  type IpcMainEvent,
+  type Point,
+  type Rectangle,
+  type Size
+} from 'electron'
 import { IpcChannel, type Region } from '../shared/types'
 import { saveCapture } from './captureStore'
 import { serveCaptureFiles } from './captureProtocol'
@@ -16,7 +24,12 @@ const HISTORY_SIZE: Size = { width: 1080, height: 720 }
 const SELECTION_PADDING_PIXELS = 16
 const FRAME_DRAWN_TIMEOUT_MS = 10_000
 
+const LOUPE_SHOT_SIZE: Size = { width: 460, height: 360 }
+const LOUPE_SHOT_LEAD_PIXELS = 260
+const LOUPE_AIM_INSET_PIXELS = 7
+
 const ACTION_BAR_SHOWN = "!document.querySelector('#actions').hidden"
+const LOUPE_SHOWN = "!document.querySelector('#loupe').hidden"
 const VISIBLE_THUMBNAILS_LOADED = `document.querySelectorAll('.frame').length > 0 &&
   [...document.images]
     .filter((image) => image.getBoundingClientRect().top < window.innerHeight)
@@ -74,23 +87,35 @@ function frameDrawnBy(window: BrowserWindow): Promise<void> {
   })
 }
 
-function dragSelection(window: BrowserWindow, region: Region): void {
-  const start = { x: region.x, y: region.y }
-  const end = { x: region.x + region.width, y: region.y + region.height }
-  window.webContents.sendInputEvent({ type: 'mouseDown', ...start, button: 'left', clickCount: 1 })
-  window.webContents.sendInputEvent({ type: 'mouseMove', ...end, button: 'left' })
-  window.webContents.sendInputEvent({ type: 'mouseUp', ...end, button: 'left', clickCount: 1 })
+function areaAround(point: Point, size: Size): Rectangle {
+  return {
+    x: Math.max(0, Math.min(point.x - LOUPE_SHOT_LEAD_PIXELS, SCENE_SIZE.width - size.width)),
+    y: Math.max(0, Math.min(point.y - size.height / 2, SCENE_SIZE.height - size.height)),
+    ...size
+  }
 }
 
-async function photographSelection(scene: Scene, path: string): Promise<void> {
+async function photographSelection(scene: Scene, outputDirectory: string): Promise<void> {
   const window = createOffscreenWindow(SCENE_SIZE, rendererWebPreferences('overlay'))
   const frameDrawn = frameDrawnBy(window)
   await loadRendererPage(window, 'overlay')
   window.webContents.send(IpcChannel.OverlayFrame, scene.frame)
   await frameDrawn
-  dragSelection(window, paddedRegion(scene.heroRegion, SELECTION_PADDING_PIXELS))
+  const selection = paddedRegion(scene.heroRegion, SELECTION_PADDING_PIXELS)
+  const start = { x: selection.x, y: selection.y }
+  const end = { x: selection.x + selection.width, y: selection.y + selection.height }
+  const aimed = {
+    x: scene.loupeTarget.x + scene.loupeTarget.width - LOUPE_AIM_INSET_PIXELS,
+    y: scene.loupeTarget.y + Math.round(scene.loupeTarget.height / 2)
+  }
+  window.webContents.sendInputEvent({ type: 'mouseDown', ...start, button: 'left', clickCount: 1 })
+  window.webContents.sendInputEvent({ type: 'mouseMove', ...aimed, button: 'left' })
+  await waitForPage(window, LOUPE_SHOWN)
+  await savePageImage(window, join(outputDirectory, 'loupe.png'), areaAround(aimed, LOUPE_SHOT_SIZE))
+  window.webContents.sendInputEvent({ type: 'mouseMove', ...end, button: 'left' })
+  window.webContents.sendInputEvent({ type: 'mouseUp', ...end, button: 'left', clickCount: 1 })
   await waitForPage(window, ACTION_BAR_SHOWN)
-  await savePageImage(window, path)
+  await savePageImage(window, join(outputDirectory, 'hero.png'))
 }
 
 async function photographHistory(path: string): Promise<void> {
@@ -107,7 +132,7 @@ async function photographReadme(outputDirectory: string, workspace: string): Pro
     await mkdir(outputDirectory, { recursive: true })
     const scene = await renderScene()
     await seedHistory(scene)
-    await photographSelection(scene, join(outputDirectory, 'hero.png'))
+    await photographSelection(scene, outputDirectory)
     await photographHistory(join(outputDirectory, 'history.png'))
   } finally {
     await rm(workspace, { recursive: true, force: true })

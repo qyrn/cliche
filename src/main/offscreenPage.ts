@@ -1,6 +1,6 @@
 import { writeFile } from 'node:fs/promises'
 import { setTimeout as delay } from 'node:timers/promises'
-import { BrowserWindow, type Size, type WebPreferences } from 'electron'
+import { BrowserWindow, type Rectangle, type Size, type WebPreferences } from 'electron'
 
 const PAGE_READY_TIMEOUT_MS = 10_000
 const PAGE_POLL_INTERVAL_MS = 100
@@ -31,7 +31,7 @@ export async function waitForPage(window: BrowserWindow, condition: string): Pro
   await delay(PAINT_SETTLE_MS)
 }
 
-export async function savePageImage(window: BrowserWindow, path: string): Promise<void> {
-  const image = await window.webContents.capturePage()
+export async function savePageImage(window: BrowserWindow, path: string, area?: Rectangle): Promise<void> {
+  const image = await window.webContents.capturePage(area)
   await writeFile(path, image.toPNG())
 }
