@@ -1,8 +1,25 @@
 import { spawn } from 'node:child_process'
+import { nativeImage } from 'electron'
 import { copyTextToClipboard } from './waylandClipboard'
 import { isCommandNotFound, missingToolError, OCR_LANGUAGES, ocrLanguagePackage } from './systemTools'
 
 const MISSING_LANGUAGE = /Failed loading language '([^']+)'/g
+const MAX_UPSCALE = 3
+const MAX_READING_PIXELS = 12_000_000
+
+export function readingScaleFor(width: number, height: number): number {
+  const affordable = Math.floor(Math.sqrt(MAX_READING_PIXELS / Math.max(1, width * height)))
+  return Math.max(1, Math.min(MAX_UPSCALE, affordable))
+}
+
+function enlargedForReading(png: Buffer): Buffer {
+  const image = nativeImage.createFromBuffer(png)
+  const { width, height } = image.getSize()
+  const scale = readingScaleFor(width, height)
+  return scale === 1
+    ? png
+    : image.resize({ width: width * scale, height: height * scale, quality: 'best' }).toPNG()
+}
 
 function tidyRecognizedText(raw: string): string {
   return raw
@@ -24,7 +41,7 @@ function tesseractFailure(stderr: string, exitCode: number | null): Error {
   return new Error(stderr.trim() || `tesseract a quitté avec le code ${exitCode}`)
 }
 
-function recognizeText(png: Buffer): Promise<string> {
+function runTesseract(png: Buffer): Promise<string> {
   return new Promise((resolve, reject) => {
     const tesseract = spawn('tesseract', ['stdin', 'stdout', '-l', OCR_LANGUAGES.join('+')], {
       env: { ...process.env, OMP_THREAD_LIMIT: '1' }
@@ -43,6 +60,10 @@ function recognizeText(png: Buffer): Promise<string> {
     })
     tesseract.stdin.end(png)
   })
+}
+
+export function recognizeText(png: Buffer): Promise<string> {
+  return runTesseract(enlargedForReading(png))
 }
 
 export async function copyTextFromImage(png: Buffer): Promise<string> {
