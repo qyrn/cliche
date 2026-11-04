@@ -2,13 +2,8 @@ import { spawn } from 'node:child_process'
 import { nativeImage } from 'electron'
 import type { Region } from '../shared/types'
 import { copyTextToClipboard } from './waylandClipboard'
-import {
-  isCommandNotFound,
-  MissingToolError,
-  missingToolError,
-  OCR_LANGUAGES,
-  ocrLanguagePackage
-} from './systemTools'
+import { readingLanguages } from './readingLanguages'
+import { isCommandNotFound, MissingToolError, missingToolError, ocrLanguagePackage } from './systemTools'
 
 const MISSING_LANGUAGE = /Failed loading language '([^']+)'/g
 const TSV_WORD_LEVEL = '5'
@@ -89,15 +84,12 @@ function tesseractFailure(stderr: string, exitCode: number | null): Error {
   return new Error(stderr.trim() || `tesseract a quitté avec le code ${exitCode}`)
 }
 
-function runTesseract(png: Buffer, outputFormats: string[] = []): Promise<string> {
+async function runTesseract(png: Buffer, outputFormats: string[] = []): Promise<string> {
+  const languages = (await readingLanguages()).join('+')
   return new Promise((resolve, reject) => {
-    const tesseract = spawn(
-      'tesseract',
-      ['stdin', 'stdout', '-l', OCR_LANGUAGES.join('+'), ...outputFormats],
-      {
-        env: { ...process.env, OMP_THREAD_LIMIT: '1' }
-      }
-    )
+    const tesseract = spawn('tesseract', ['stdin', 'stdout', '-l', languages, ...outputFormats], {
+      env: { ...process.env, OMP_THREAD_LIMIT: '1' }
+    })
     const output: Buffer[] = []
     const errors: Buffer[] = []
     tesseract.stdout.on('data', (chunk: Buffer) => output.push(chunk))

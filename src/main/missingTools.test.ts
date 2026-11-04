@@ -26,7 +26,7 @@ afterEach(async () => {
 describe('findMissingPackages', () => {
   it('lists every package when no tool is installed', async () => {
     process.env['PATH'] = toolsDirectory
-    expect(await findMissingPackages()).toEqual(['wl-clipboard', 'glib2', 'tesseract'])
+    expect(await findMissingPackages(['fra', 'eng'])).toEqual(['wl-clipboard', 'glib2', 'tesseract'])
   })
 
   it('lists the Tesseract languages that are missing', async () => {
@@ -36,6 +36,6 @@ describe('findMissingPackages', () => {
       await chmod(path, 0o755)
     }
     process.env['PATH'] = `${toolsDirectory}:/usr/bin:/bin`
-    expect(await findMissingPackages()).toEqual(['tesseract-data-fra'])
+    expect(await findMissingPackages(['fra', 'eng'])).toEqual(['tesseract-data-fra'])
   })
 })

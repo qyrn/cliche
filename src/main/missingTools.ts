@@ -1,11 +1,6 @@
 import { execFile } from 'node:child_process'
-import {
-  isCommandNotFound,
-  OCR_LANGUAGES,
-  ocrLanguagePackage,
-  TOOL_PACKAGES,
-  type ExternalTool
-} from './systemTools'
+import { installedLanguagesIn } from './ocrLanguages'
+import { isCommandNotFound, ocrLanguagePackage, TOOL_PACKAGES, type ExternalTool } from './systemTools'
 
 const PROBE_ARGUMENTS: Record<ExternalTool, string[]> = {
   'wl-copy': ['--version'],
@@ -21,11 +16,7 @@ function probe(tool: ExternalTool): Promise<string | null> {
   })
 }
 
-function installedLanguages(listing: string): Set<string> {
-  return new Set(listing.split('\n').map((line) => line.trim()))
-}
-
-export async function findMissingPackages(): Promise<string[]> {
+export async function findMissingPackages(readingLanguages: readonly string[]): Promise<string[]> {
   const tools = Object.keys(TOOL_PACKAGES) as ExternalTool[]
   const outputs = await Promise.all(tools.map(probe))
   const missing: string[] = tools
@@ -33,8 +24,8 @@ export async function findMissingPackages(): Promise<string[]> {
     .map((tool) => TOOL_PACKAGES[tool])
   const tesseractListing = outputs[tools.indexOf('tesseract')]
   if (tesseractListing) {
-    const languages = installedLanguages(tesseractListing)
-    missing.push(...OCR_LANGUAGES.filter((language) => !languages.has(language)).map(ocrLanguagePackage))
+    const installed = installedLanguagesIn(tesseractListing)
+    missing.push(...readingLanguages.filter((language) => !installed.has(language)).map(ocrLanguagePackage))
   }
   return missing
 }

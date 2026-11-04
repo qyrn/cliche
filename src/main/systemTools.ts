@@ -1,5 +1,3 @@
-export const OCR_LANGUAGES = ['fra', 'eng'] as const
-
 export const TOOL_PACKAGES = {
   'wl-copy': 'wl-clipboard',
   gdbus: 'glib2',

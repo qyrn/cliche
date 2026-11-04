@@ -8,6 +8,7 @@ import { registerHistoryIpc } from './historyIpc'
 import { isHistoryWebContents, notifyTextsRead, showHistoryWindow } from './historyWindow'
 import { findMissingPackages } from './missingTools'
 import { notify } from './notify'
+import { systemReadingLanguages } from './readingLanguages'
 import { prepareOverlay } from './overlayWindow'
 import { runScreenshotMode } from './screenshotMode'
 import { createTray } from './tray'
@@ -37,7 +38,7 @@ async function bindPrintKey(): Promise<void> {
 }
 
 async function warnAboutMissingTools(): Promise<void> {
-  const missingPackages = await findMissingPackages()
+  const missingPackages = await findMissingPackages(systemReadingLanguages())
   if (missingPackages.length > 0) {
     notify(
       'Il manque des outils à cliché',

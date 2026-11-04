@@ -87,7 +87,6 @@
         "glib2",
         "wl-clipboard",
         "tesseract",
-        "tesseract-data-fra",
         "tesseract-data-eng"
       ]
     }
