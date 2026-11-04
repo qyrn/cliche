@@ -8,7 +8,7 @@
   "type": "module",
   "main": "./out/main/index.js",
   "scripts": {
-    "native": "mkdir -p resources/bin && cc -O2 -Wall -Wextra -Werror -o resources/bin/kwin-grab native/kwin-grab.c $(pkg-config --cflags --libs libsystemd) -pthread",
+    "native": "sh scripts/build-native.sh",
     "dev": "pnpm native && electron-vite dev",
     "build": "pnpm native && electron-vite build",
     "build:linux": "pnpm build && electron-builder --linux",

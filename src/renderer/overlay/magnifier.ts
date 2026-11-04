@@ -1,6 +1,6 @@
 import type { Bounds, Point } from './selectionGeometry'
 
-export const LOUPE_SAMPLE_PIXELS = 15
+const LOUPE_SAMPLE_PIXELS = 15
 const LOUPE_GAP_CSS_PIXELS = 18
 const SCREEN_EDGE_CSS_PIXELS = 8
 const BACKDROP_COLOR = '#16181a'

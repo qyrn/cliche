@@ -6,6 +6,7 @@ import {
   cursorFor,
   nudgeRegion,
   regionBetween,
+  windowAt,
   zoneAt,
   type Bounds,
   type DragZone,
@@ -40,6 +41,8 @@ const loupeContext = memoryBackedContext(loupeCanvas)
 let bounds: Bounds = { width: 0, height: 0 }
 let selection: Region | null = null
 let gesture: Gesture = { kind: 'idle' }
+let windows: Region[] = []
+let hoveredWindow: Region | null = null
 
 function memoryBackedContext(canvas: HTMLCanvasElement): CanvasRenderingContext2D {
   const context = canvas.getContext('2d', { willReadFrequently: true })
@@ -120,10 +123,11 @@ function placeActionBar(rect: Region): void {
 }
 
 function render(): void {
-  paintShade(shadeContext, selection, pixelsPerCssPixel())
+  paintShade(shadeContext, selection, hoveredWindow, pixelsPerCssPixel())
   hint.hidden = selection !== null || gesture.kind !== 'idle'
-  if (selection) {
-    placeSizeReadout(selection)
+  const measured = selection ?? hoveredWindow
+  if (measured) {
+    placeSizeReadout(measured)
   } else {
     sizeReadout.hidden = true
   }
@@ -139,6 +143,7 @@ function render(): void {
 
 function resetSelection(): void {
   selection = null
+  hoveredWindow = null
   gesture = { kind: 'idle' }
   shadeCanvas.style.cursor = cursorFor(null)
   loupe.hidden = true
@@ -147,6 +152,7 @@ function resetSelection(): void {
 
 function showFrame(frame: ScreenFrame): void {
   bounds = { width: frame.width, height: frame.height }
+  windows = frame.windows
   for (const canvas of [screenCanvas, shadeCanvas]) {
     canvas.width = frame.width
     canvas.height = frame.height
@@ -220,6 +226,12 @@ shadeCanvas.addEventListener('pointermove', (event) => {
     shadeCanvas.style.cursor = cursorFor(
       zoneAt(selection, point, GRAB_MARGIN_CSS_PIXELS * pixelsPerCssPixel())
     )
+  } else {
+    const hovered = windowAt(windows, point)
+    if (hovered !== hoveredWindow) {
+      hoveredWindow = hovered
+      render()
+    }
   }
   followWithLoupe(event)
 })
@@ -228,15 +240,16 @@ shadeCanvas.addEventListener('pointerleave', () => {
   loupe.hidden = true
 })
 
-shadeCanvas.addEventListener('pointerup', () => {
+shadeCanvas.addEventListener('pointerup', (event) => {
   if (gesture.kind === 'idle') {
     return
   }
   const tooSmall =
     selection && (selection.width < MIN_SELECTION_PIXELS || selection.height < MIN_SELECTION_PIXELS)
   if (tooSmall) {
-    selection = null
+    selection = gesture.kind === 'drawing' ? windowAt(windows, framePoint(event)) : null
   }
+  hoveredWindow = null
   gesture = { kind: 'idle' }
   render()
 })

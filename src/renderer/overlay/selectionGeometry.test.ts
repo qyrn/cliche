@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { adjustRegion, cursorFor, nudgeRegion, regionBetween, zoneAt } from './selectionGeometry'
+import { adjustRegion, cursorFor, nudgeRegion, regionBetween, windowAt, zoneAt } from './selectionGeometry'
 
 const bounds = { width: 1000, height: 600 }
 const rect = { x: 100, y: 100, width: 200, height: 100 }
@@ -72,5 +72,19 @@ describe('nudgeRegion', () => {
 
   it('ignores keys that are not arrows', () => {
     expect(nudgeRegion(rect, 'a', 1, false, bounds)).toBeNull()
+  })
+})
+
+describe('windowAt', () => {
+  const panel = { x: 0, y: 560, width: 1000, height: 40 }
+  const editor = { x: 50, y: 50, width: 600, height: 520 }
+
+  it('picks the topmost window under the pointer', () => {
+    expect(windowAt([panel, editor], { x: 100, y: 565 })).toBe(panel)
+    expect(windowAt([panel, editor], { x: 100, y: 300 })).toBe(editor)
+  })
+
+  it('finds nothing on the bare desktop', () => {
+    expect(windowAt([panel, editor], { x: 800, y: 100 })).toBeNull()
   })
 })

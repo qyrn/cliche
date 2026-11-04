@@ -17,6 +17,7 @@ export interface ScreenFrame {
   width: number
   height: number
   pixels: Uint8Array
+  windows: Region[]
 }
 
 export interface Region {

@@ -126,3 +126,15 @@ export function nudgeRegion(
     height: clamp(region.height + deltaY, 1, bounds.height - region.y)
   }
 }
+
+export function windowAt(windows: Region[], point: Point): Region | null {
+  return (
+    windows.find(
+      (window) =>
+        point.x >= window.x &&
+        point.x < window.x + window.width &&
+        point.y >= window.y &&
+        point.y < window.y + window.height
+    ) ?? null
+  )
+}

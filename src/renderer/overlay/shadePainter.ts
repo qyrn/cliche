@@ -37,31 +37,39 @@ function drawHandles(context: CanvasRenderingContext2D, rect: Region, size: numb
   }
 }
 
+function outline(context: CanvasRenderingContext2D, region: Region, pixelsPerCssPixel: number): void {
+  context.clearRect(region.x, region.y, region.width, region.height)
+  const lineWidth = Math.max(1, Math.round(1.5 * pixelsPerCssPixel))
+  frameAround(context, region, lineWidth, PENCIL_COLOR)
+  frameAround(
+    context,
+    {
+      x: region.x - lineWidth,
+      y: region.y - lineWidth,
+      width: region.width + lineWidth * 2,
+      height: region.height + lineWidth * 2
+    },
+    1,
+    OUTLINE_COLOR
+  )
+}
+
 export function paintShade(
   context: CanvasRenderingContext2D,
   selection: Region | null,
+  hoveredWindow: Region | null,
   pixelsPerCssPixel: number
 ): void {
   const { canvas } = context
   context.clearRect(0, 0, canvas.width, canvas.height)
   context.fillStyle = DIM_COLOR
   context.fillRect(0, 0, canvas.width, canvas.height)
-  if (!selection) {
+  const highlighted = selection ?? hoveredWindow
+  if (!highlighted) {
     return
   }
-  context.clearRect(selection.x, selection.y, selection.width, selection.height)
-  const lineWidth = Math.max(1, Math.round(1.5 * pixelsPerCssPixel))
-  frameAround(context, selection, lineWidth, PENCIL_COLOR)
-  frameAround(
-    context,
-    {
-      x: selection.x - lineWidth,
-      y: selection.y - lineWidth,
-      width: selection.width + lineWidth * 2,
-      height: selection.height + lineWidth * 2
-    },
-    1,
-    OUTLINE_COLOR
-  )
-  drawHandles(context, selection, Math.round(7 * pixelsPerCssPixel))
+  outline(context, highlighted, pixelsPerCssPixel)
+  if (selection) {
+    drawHandles(context, selection, Math.round(7 * pixelsPerCssPixel))
+  }
 }

@@ -11,8 +11,12 @@ export interface Scene {
   frame: CapturedFrame
   heroRegion: Region
   loupeTarget: Region
+  hoverTarget: Region
   sampleRegions: Region[]
 }
+
+type ScenePixels = Omit<CapturedFrame, 'windows'>
+type SceneTargets = Omit<Scene, 'frame'> & { windows: Region[] }
 
 const SCENE_READY = 'document.fonts.ready.then(() => [...document.images].every((image) => image.complete))'
 
@@ -28,10 +32,18 @@ const MEASURE_TARGETS = `(() => {
   }
   const hero = document.querySelector('[data-hero]')
   const loupe = document.querySelector('[data-loupe]')
+  const hover = document.querySelector('[data-hover]')
+  const windows = [...document.querySelectorAll('[data-window]')].map(regionOf)
   const samples = [...document.querySelectorAll('[data-capture]')]
     .sort((first, second) => Number(first.dataset.capture) - Number(second.dataset.capture))
     .map(regionOf)
-  return { hero: hero ? regionOf(hero) : null, loupe: loupe ? regionOf(loupe) : null, samples }
+  return {
+    hero: hero ? regionOf(hero) : null,
+    loupe: loupe ? regionOf(loupe) : null,
+    hover: hover ? regionOf(hover) : null,
+    windows,
+    samples
+  }
 })()`
 
 function swapRedAndBlue(bitmap: Buffer): Buffer {
@@ -43,7 +55,7 @@ function swapRedAndBlue(bitmap: Buffer): Buffer {
   return bitmap
 }
 
-function frameOf(image: NativeImage): CapturedFrame {
+function pixelsOf(image: NativeImage): ScenePixels {
   const { width, height } = image.getSize()
   if (width !== SCENE_SIZE.width || height !== SCENE_SIZE.height) {
     throw new Error(
@@ -53,20 +65,27 @@ function frameOf(image: NativeImage): CapturedFrame {
   return { width, height, pixels: swapRedAndBlue(image.toBitmap()) }
 }
 
-function targetsWithin(measured: unknown, frame: CapturedFrame): Omit<Scene, 'frame'> {
+function targetsWithin(measured: unknown, frame: ScenePixels): SceneTargets {
   if (
     typeof measured !== 'object' ||
     measured === null ||
     !('hero' in measured) ||
     !('loupe' in measured) ||
+    !('hover' in measured) ||
+    !('windows' in measured) ||
     !('samples' in measured) ||
+    !Array.isArray(measured.windows) ||
     !Array.isArray(measured.samples)
   ) {
-    throw new Error('Scène illisible : il manque data-hero, data-loupe ou data-capture')
+    throw new Error(
+      'Scène illisible : il manque data-hero, data-loupe, data-hover, data-window ou data-capture'
+    )
   }
   return {
     heroRegion: toRegionWithin(measured.hero, frame),
     loupeTarget: toRegionWithin(measured.loupe, frame),
+    hoverTarget: toRegionWithin(measured.hover, frame),
+    windows: measured.windows.map((region: unknown) => toRegionWithin(region, frame)).reverse(),
     sampleRegions: measured.samples.map((region: unknown) => toRegionWithin(region, frame))
   }
 }
@@ -76,6 +95,7 @@ export async function renderScene(): Promise<Scene> {
   await window.loadFile(join(app.getAppPath(), 'docs', 'scene', 'index.html'))
   await waitForPage(window, SCENE_READY)
   const measured: unknown = await window.webContents.executeJavaScript(MEASURE_TARGETS)
-  const frame = frameOf(await window.webContents.capturePage())
-  return { frame, ...targetsWithin(measured, frame) }
+  const pixels = pixelsOf(await window.webContents.capturePage())
+  const { windows, ...targets } = targetsWithin(measured, pixels)
+  return { frame: { ...pixels, windows }, ...targets }
 }

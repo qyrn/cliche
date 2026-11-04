@@ -12,7 +12,7 @@ function isRegion(value: unknown): value is Region {
   return [candidate.x, candidate.y, candidate.width, candidate.height].every(Number.isInteger)
 }
 
-export function toRegionWithin(payload: unknown, frame: CapturedFrame): Region {
+export function toRegionWithin(payload: unknown, frame: Pick<CapturedFrame, 'width' | 'height'>): Region {
   if (
     !isRegion(payload) ||
     payload.x < 0 ||
