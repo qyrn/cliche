@@ -11,7 +11,7 @@ Captures d'écran pour KDE Plasma sous Wayland, avec un historique et la lecture
 
 <br />
 
-<img src="docs/hero.png" width="600" alt="L'écran de sélection de cliché : une zone entourée de jaune, sa taille en pixels au-dessus, et la barre Copier, Copier le texte, Flouter, Annuler juste en dessous" />
+<img src="docs/fr/hero.png" width="600" alt="L'écran de sélection de cliché : une zone entourée de jaune, sa taille en pixels au-dessus, et la barre Copier, Copier le texte, Flouter, Annuler juste en dessous" />
 
 </div>
 
@@ -24,7 +24,7 @@ J'en avais marre de galérer dès que je voulais copier le texte d'une image sur
 Appuie sur `Impr`, l'écran se fige tout de suite et s'assombrit. Glisse pour choisir une zone, sa taille en pixels s'affiche juste au-dessus. Pendant que tu vises, une petite loupe suit ton curseur et grossit les pixels autour, pratique pour tomber pile sur le bord d'un bouton.
 
 <div align="center">
-<img src="docs/loupe.png" width="460" alt="La loupe à côté du curseur, qui grossit les pixels d'une lettre, avec les coordonnées en dessous" />
+<img src="docs/fr/loupe.png" width="460" alt="La loupe à côté du curseur, qui grossit les pixels d'une lettre, avec les coordonnées en dessous" />
 </div>
 
 Une fois la zone tracée, tu peux la déplacer, tirer sur un bord ou un coin, ou l'ajuster au pixel près avec les flèches. Entrée copie la zone et l'enregistre dans `Images/Screenshots`, puis une petite notification te montre l'aperçu (un clic dessus ouvre l'historique). Sans zone, Entrée prend tout l'écran.
@@ -46,7 +46,7 @@ Une fois la zone tracée, tu peux la déplacer, tirer sur un bord ou un coin, ou
 Passe la souris sur une fenêtre, elle s'éclaire avec sa taille au-dessus. Un clic et c'est elle qui est sélectionnée, barre de titre comprise, sans avoir à tracer quoi que ce soit. Double-clique dessus pour la copier direct.
 
 <div align="center">
-<img src="docs/window.png" width="600" alt="L'écran de sélection avec la fenêtre Terminal éclairée et sa taille, 560 × 340, juste au-dessus" />
+<img src="docs/fr/window.png" width="600" alt="L'écran de sélection avec la fenêtre Terminal éclairée et sa taille, 560 × 340, juste au-dessus" />
 </div>
 
 Ça marche aussi avec le panneau de Plasma ou une boîte de dialogue.
@@ -56,7 +56,7 @@ Passe la souris sur une fenêtre, elle s'éclaire avec sa taille au-dessus. Un c
 Appuie sur `B` (ou sur Flouter dans la barre) : cliché lit la zone et floute tout seul les adresses mail, numéros de téléphone, IBAN, numéros de carte et clés d'API qu'il y trouve. En bas de l'écran, il te dit combien il en a caché.
 
 <div align="center">
-<img src="docs/blur.png" width="600" alt="L'en-tête d'une recette où l'adresse mail et le numéro de téléphone de Camille sont floutés en gros pixels, avec le bouton Flouter allumé" />
+<img src="docs/fr/blur.png" width="600" alt="L'en-tête d'une recette où l'adresse mail et le numéro de téléphone de Camille sont floutés en gros pixels, avec le bouton Flouter allumé" />
 </div>
 
 Il en a raté un, ou tu veux cacher autre chose ? Glisse dessus, ça part en gros pixels aussi. `Ctrl+Z` retire le dernier flou, et un nouvel appui sur `B` te rend la main pour ajuster la zone. Si tu appuies sur Entrée pendant qu'il cherche encore, la copie attend qu'il ait fini, comme ça rien ne part en clair.
@@ -75,13 +75,13 @@ La lecture marche en français et en anglais, avec [Tesseract](https://github.co
 L'historique range toutes tes captures par jour : aujourd'hui, hier, puis la date. Clique sur une image pour la recopier, double-clique pour l'ouvrir dans ta visionneuse, ou glisse-la directement dans une autre app. Sous chaque capture, t'as aussi Texte pour copier ce qu'elle contient, Ouvrir, et Supprimer, qui l'envoie à la corbeille.
 
 <div align="center">
-<img src="docs/history.png" width="600" alt="La fenêtre Historique, avec le champ de recherche en haut et les captures du jour en grille" />
+<img src="docs/fr/history.png" width="600" alt="La fenêtre Historique, avec le champ de recherche en haut et les captures du jour en grille" />
 </div>
 
 Le plus pratique, c'est la recherche. cliché lit le texte de tes captures en arrière-plan, du coup tu tapes un mot dans le champ en haut et il ne te montre que celles qui le contiennent. Pas besoin de mettre les accents ni les majuscules : « vanille » trouve « Vanillé ».
 
 <div align="center">
-<img src="docs/search.png" width="600" alt="L'historique filtré sur le mot vanille, avec 3 captures sur 8 affichées" />
+<img src="docs/fr/search.png" width="600" alt="L'historique filtré sur le mot vanille, avec 3 captures sur 8 affichées" />
 </div>
 
 Pour l'ouvrir, clique sur l'icône de cliché dans la barre système, ou sur la notification juste après une capture. Le clic droit sur l'icône te propose aussi de lancer une capture, d'ouvrir le dossier ou de couper le lancement au démarrage. Au clavier, `Ctrl+F` va dans la recherche, `T` lit le texte de la capture sélectionnée et `Suppr` la met à la corbeille.
