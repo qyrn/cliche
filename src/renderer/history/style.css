@@ -66,8 +66,27 @@ button:focus-visible {
   font-variant-numeric: tabular-nums;
 }
 
-#open-folder {
+#search {
+  width: min(320px, 40vw);
   margin-left: auto;
+  padding: 6px 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 5px;
+  background: var(--negative);
+  color: var(--ink);
+  font: inherit;
+}
+
+#search::placeholder {
+  color: var(--ink-dim);
+}
+
+#search:focus-visible {
+  outline: 2px solid var(--pencil);
+  outline-offset: 1px;
+}
+
+#open-folder {
   padding: 6px 12px;
   border: 1px solid var(--line-strong);
   border-radius: 5px;
@@ -84,7 +103,13 @@ button:focus-visible {
   scrollbar-color: var(--line-strong) transparent;
 }
 
-#empty {
+.day[hidden],
+.frame[hidden] {
+  display: none;
+}
+
+#empty,
+#no-match {
   max-width: 34em;
   padding-top: 48px;
   color: var(--ink-dim);

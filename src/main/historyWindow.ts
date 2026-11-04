@@ -1,5 +1,5 @@
 import { BrowserWindow, type WebContents } from 'electron'
-import { IpcChannel } from '../shared/types'
+import { IpcChannel, type KnownTexts } from '../shared/types'
 import { loadRendererPage, rendererWebPreferences } from './rendererPage'
 import { resourcePath } from './resourcePath'
 
@@ -37,4 +37,8 @@ export function isHistoryWebContents(contents: WebContents): boolean {
 
 export function notifyHistoryChanged(): void {
   historyWindow?.webContents.send(IpcChannel.HistoryChanged)
+}
+
+export function notifyTextsRead(update: KnownTexts): void {
+  historyWindow?.webContents.send(IpcChannel.HistoryTextsRead, update)
 }

@@ -1,18 +1,24 @@
-import type { CaptureEntry } from '../../shared/types'
+import type { CaptureEntry, KnownTexts } from '../../shared/types'
 import { requireElement } from '../requireElement'
 import { dayKey, dayLabel, timeLabel } from './captureDates'
+import { containsAllWords, searchWords } from './textSearch'
 
 const COPIED_MARK_DURATION_MS = 1600
 const TEXT_PREVIEW_LENGTH = 90
 
 const sheet = requireElement('#sheet', HTMLElement)
 const emptyMessage = requireElement('#empty', HTMLParagraphElement)
+const noMatchMessage = requireElement('#no-match', HTMLParagraphElement)
 const countLabel = requireElement('#count', HTMLParagraphElement)
+const searchInput = requireElement('#search', HTMLInputElement)
 const statusLine = requireElement('#status', HTMLParagraphElement)
 const openFolderButton = requireElement('#open-folder', HTMLButtonElement)
 const frameTemplate = requireElement('#frame-template', HTMLTemplateElement)
 
 let captureCount = 0
+let matchCount = 0
+let remainingToRead = 0
+const readTexts = new Map<string, string>()
 
 function setStatus(message: string): void {
   statusLine.textContent = message
@@ -27,8 +33,43 @@ function failureMessage(prefix: string, error: unknown): string {
 }
 
 function updateCount(): void {
-  countLabel.textContent = captureCount === 1 ? '1 capture' : `${captureCount} captures`
+  const searching = searchWords(searchInput.value).length > 0
+  const total = captureCount === 1 ? '1 capture' : `${captureCount} captures`
+  const shown = searching ? `${matchCount} sur ${captureCount}` : total
+  countLabel.textContent = remainingToRead > 0 ? `${shown}, encore ${remainingToRead} à lire` : shown
   emptyMessage.hidden = captureCount > 0
+  noMatchMessage.hidden = !searching || matchCount > 0 || captureCount === 0
+  const stillReading =
+    remainingToRead > 0
+      ? ` Il reste ${remainingToRead} captures à lire, elles s'afficheront ici si le mot y est.`
+      : ''
+  noMatchMessage.textContent = `Aucune capture ne contient « ${searchInput.value.trim()} ».${stillReading}`
+}
+
+function applySearch(): void {
+  const words = searchWords(searchInput.value)
+  matchCount = 0
+  for (const day of sheet.querySelectorAll<HTMLElement>('.day')) {
+    let dayHasMatch = false
+    for (const frame of day.querySelectorAll<HTMLLIElement>('.frame')) {
+      const matches = containsAllWords(readTexts.get(frame.dataset['name'] ?? '') ?? '', words)
+      frame.hidden = !matches
+      if (matches) {
+        matchCount += 1
+        dayHasMatch = true
+      }
+    }
+    day.hidden = !dayHasMatch
+  }
+  updateCount()
+}
+
+function mergeReadTexts(update: KnownTexts): void {
+  for (const [name, text] of Object.entries(update.texts)) {
+    readTexts.set(name, text)
+  }
+  remainingToRead = update.remaining
+  applySearch()
 }
 
 function captureUrl(name: string): string {
@@ -75,9 +116,9 @@ function groupByDay(entries: CaptureEntry[]): CaptureEntry[][] {
 async function refresh(): Promise<void> {
   const entries = await window.captures.list()
   const days = groupByDay(entries).map((group) => buildDay(dayLabel(group[0]?.takenAt ?? 0), group))
-  sheet.replaceChildren(emptyMessage, ...days)
+  sheet.replaceChildren(emptyMessage, noMatchMessage, ...days)
   captureCount = entries.length
-  updateCount()
+  applySearch()
 }
 
 function markCopied(frame: HTMLLIElement): void {
@@ -92,7 +133,7 @@ function removeFrame(frame: HTMLLIElement): void {
     day.remove()
   }
   captureCount -= 1
-  updateCount()
+  applySearch()
 }
 
 function previewOf(text: string): string {
@@ -114,6 +155,7 @@ async function copyText(name: string): Promise<void> {
   setStatus('Lecture du texte…')
   try {
     const text = await window.captures.readText(name)
+    readTexts.set(name, text)
     setStatus(text ? `Texte copié : « ${previewOf(text)} »` : 'Aucun texte trouvé dans cette capture')
   } catch (error) {
     setStatus(failureMessage('La lecture du texte a échoué', error))
@@ -195,6 +237,26 @@ openFolderButton.addEventListener('click', () => {
     .catch((error: unknown) => setStatus(failureMessage("Impossible d'ouvrir le dossier", error)))
 })
 
+searchInput.addEventListener('input', applySearch)
+
+searchInput.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && searchInput.value) {
+    searchInput.value = ''
+    applySearch()
+  }
+})
+
+window.addEventListener('keydown', (event) => {
+  if (event.ctrlKey && event.key.toLowerCase() === 'f') {
+    event.preventDefault()
+    searchInput.focus()
+    searchInput.select()
+  }
+})
+
 window.captures.onChanged(() => void refresh())
+window.captures.onTextsRead(mergeReadTexts)
 window.addEventListener('focus', () => void refresh())
 void refresh()
+  .then(() => window.captures.texts())
+  .then(mergeReadTexts)

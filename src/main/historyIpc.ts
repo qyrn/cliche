@@ -9,8 +9,8 @@ import {
 } from 'electron'
 import { IpcChannel } from '../shared/types'
 import { captureDirectory, listCaptures, resolveCapturePath } from './captureStore'
-import { copyPngToClipboard } from './waylandClipboard'
-import { copyTextFromImage } from './textRecognition'
+import { knownTexts, queueUnreadCaptures, textOfCapture } from './captureIndexer'
+import { copyPngToClipboard, copyTextToClipboard } from './waylandClipboard'
 
 type SenderCheck = (contents: WebContents) => boolean
 
@@ -40,7 +40,13 @@ export function registerHistoryIpc(isHistorySender: SenderCheck): void {
 
   ipcMain.handle(
     IpcChannel.HistoryList,
-    fromHistory(() => listCaptures())
+    fromHistory(async () => {
+      const entries = await listCaptures()
+      queueUnreadCaptures(entries).catch((error: unknown) =>
+        console.error('Impossible de lire le texte des captures', error)
+      )
+      return entries
+    })
   )
   ipcMain.handle(
     IpcChannel.HistoryCopyImage,
@@ -48,7 +54,13 @@ export function registerHistoryIpc(isHistorySender: SenderCheck): void {
   )
   ipcMain.handle(
     IpcChannel.HistoryReadText,
-    fromHistory(async (name) => copyTextFromImage(await readFile(resolveCapturePath(name))))
+    fromHistory(async (name) => {
+      const text = await textOfCapture(name)
+      if (text) {
+        await copyTextToClipboard(text)
+      }
+      return text
+    })
   )
   ipcMain.handle(
     IpcChannel.HistoryOpen,
@@ -61,6 +73,10 @@ export function registerHistoryIpc(isHistorySender: SenderCheck): void {
   ipcMain.handle(
     IpcChannel.HistoryTrash,
     fromHistory((name) => shell.trashItem(resolveCapturePath(name)))
+  )
+  ipcMain.handle(
+    IpcChannel.HistoryTexts,
+    fromHistory(async () => knownTexts(await listCaptures()))
   )
   ipcMain.on(IpcChannel.HistoryStartDrag, (event, name: unknown) => {
     if (!isHistorySender(event.sender)) {

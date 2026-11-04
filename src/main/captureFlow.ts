@@ -4,6 +4,7 @@ import { setTimeout as delay } from 'node:timers/promises'
 import { ipcMain, type IpcMainEvent, type NativeImage } from 'electron'
 import { pixelate } from '../shared/pixelate'
 import { IpcChannel } from '../shared/types'
+import { readNewCaptureFirst } from './captureIndexer'
 import { captureDirectory, saveCapture } from './captureStore'
 import { copyPngToClipboard } from './waylandClipboard'
 import { imageOfRegion, toExportRequestWithin } from './frameRegion'
@@ -94,7 +95,10 @@ async function takeRegion(payload: unknown): Promise<NativeImage> {
 async function copyAndSave(image: NativeImage): Promise<void> {
   const png = image.toPNG()
   await copyPngToClipboard(png)
-  await saveCapture(png)
+  const path = await saveCapture(png)
+  readNewCaptureFirst(path).catch((error: unknown) =>
+    console.error('Impossible de lire cette capture', error)
+  )
   notifyHistoryChanged()
   const folder = relative(homedir(), captureDirectory())
   notify('Capture copiée', `Tu la retrouves aussi dans ${folder}.`, { image, onClick: showHistoryWindow })

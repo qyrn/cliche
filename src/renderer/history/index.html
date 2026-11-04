@@ -14,10 +14,19 @@
     <header class="masthead">
       <h1>cliché</h1>
       <p id="count"></p>
+      <input
+        type="search"
+        id="search"
+        placeholder="Chercher un mot dans tes captures"
+        aria-label="Chercher dans le texte des captures"
+        spellcheck="false"
+        autocomplete="off"
+      />
       <button type="button" id="open-folder">Ouvrir le dossier</button>
     </header>
     <main id="sheet">
       <p id="empty" hidden>Aucune capture pour l'instant. Appuie sur Impr pour faire la première !</p>
+      <p id="no-match" hidden></p>
     </main>
     <footer>
       <p id="status" role="status" aria-live="polite">

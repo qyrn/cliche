@@ -11,6 +11,8 @@ export const IpcChannel = {
   HistoryOpenFolder: 'history:open-folder',
   HistoryTrash: 'history:trash',
   HistoryStartDrag: 'history:start-drag',
+  HistoryTexts: 'history:texts',
+  HistoryTextsRead: 'history:texts-read',
   HistoryChanged: 'history:changed'
 } as const
 
@@ -31,6 +33,11 @@ export interface Region {
 export interface ExportRequest {
   region: Region
   blurs: Region[]
+}
+
+export interface KnownTexts {
+  texts: Record<string, string>
+  remaining: number
 }
 
 export interface CaptureEntry {
@@ -54,5 +61,7 @@ export interface HistoryBridge {
   openFolder(): Promise<void>
   trash(name: string): Promise<void>
   startDrag(name: string): void
+  texts(): Promise<KnownTexts>
+  onTextsRead(listener: (update: KnownTexts) => void): void
   onChanged(listener: () => void): void
 }

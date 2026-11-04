@@ -16,6 +16,8 @@ export function isCommandNotFound(error: unknown): boolean {
   return error instanceof Error && 'code' in error && error.code === 'ENOENT'
 }
 
-export function missingToolError(tool: ExternalTool): Error {
-  return new Error(`${tool} est introuvable, installe le paquet ${TOOL_PACKAGES[tool]}`)
+export class MissingToolError extends Error {}
+
+export function missingToolError(tool: ExternalTool): MissingToolError {
+  return new MissingToolError(`${tool} est introuvable, installe le paquet ${TOOL_PACKAGES[tool]}`)
 }

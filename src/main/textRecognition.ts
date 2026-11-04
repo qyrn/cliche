@@ -1,7 +1,13 @@
 import { spawn } from 'node:child_process'
 import { nativeImage } from 'electron'
 import { copyTextToClipboard } from './waylandClipboard'
-import { isCommandNotFound, missingToolError, OCR_LANGUAGES, ocrLanguagePackage } from './systemTools'
+import {
+  isCommandNotFound,
+  MissingToolError,
+  missingToolError,
+  OCR_LANGUAGES,
+  ocrLanguagePackage
+} from './systemTools'
 
 const MISSING_LANGUAGE = /Failed loading language '([^']+)'/g
 const MAX_UPSCALE = 3
@@ -36,7 +42,7 @@ function tesseractFailure(stderr: string, exitCode: number | null): Error {
     .filter((language) => language !== undefined)
     .map(ocrLanguagePackage)
   if (missingPackages.length > 0) {
-    return new Error(`Il manque des langues à Tesseract, installe ${missingPackages.join(' et ')}`)
+    return new MissingToolError(`Il manque des langues à Tesseract, installe ${missingPackages.join(' et ')}`)
   }
   return new Error(stderr.trim() || `tesseract a quitté avec le code ${exitCode}`)
 }

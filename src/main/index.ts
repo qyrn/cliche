@@ -1,9 +1,10 @@
 import { app, Menu } from 'electron'
 import { registerCaptureFlow, startCapture } from './captureFlow'
+import { onTextsRead } from './captureIndexer'
 import { declareCaptureScheme, serveCaptureFiles } from './captureProtocol'
 import { registerCaptureShortcut, releaseCaptureShortcut } from './globalShortcut'
 import { registerHistoryIpc } from './historyIpc'
-import { isHistoryWebContents, showHistoryWindow } from './historyWindow'
+import { isHistoryWebContents, notifyTextsRead, showHistoryWindow } from './historyWindow'
 import { findMissingPackages } from './missingTools'
 import { notify } from './notify'
 import { prepareOverlay } from './overlayWindow'
@@ -67,6 +68,7 @@ if (screenshotDirectory) {
     prepareOverlay()
     registerCaptureFlow()
     registerHistoryIpc(isHistoryWebContents)
+    onTextsRead(notifyTextsRead)
     createTray(() => app.quit())
     void warnAboutMissingTools()
     await bindPrintKey()
