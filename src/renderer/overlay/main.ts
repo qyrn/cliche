@@ -1,5 +1,7 @@
+import { messagesFor } from '../../shared/i18n/messages'
 import type { ExportRequest, Region, ScreenFrame } from '../../shared/types'
 import { requireElement } from '../requireElement'
+import { translatePage } from '../translatePage'
 import { frozenScreen } from './frozenScreen'
 import { paintLoupe, placeLoupe } from './magnifier'
 import {
@@ -27,6 +29,8 @@ const FLOATING_GAP_CSS_PIXELS = 8
 const SCREEN_EDGE_CSS_PIXELS = 8
 const LOUPE_CSS_PIXELS = 120
 const FAST_NUDGE_PIXELS = 10
+
+const text = messagesFor(navigator.language)
 
 const screenCanvas = requireElement('#screen', HTMLCanvasElement)
 const shadeCanvas = requireElement('#shade', HTMLCanvasElement)
@@ -222,13 +226,6 @@ async function finishWith(send: (request: ExportRequest) => void): Promise<void>
   }
 }
 
-function describeFoundInfo(count: number): string {
-  if (count === 0) {
-    return 'Aucune info perso repérée'
-  }
-  return count === 1 ? '1 info perso floutée' : `${count} infos perso floutées`
-}
-
 function blurPersonalInfo(zone: Region): void {
   const zoneKey = `${zone.x},${zone.y},${zone.width},${zone.height}`
   if (zoneKey === detectedZone) {
@@ -236,17 +233,17 @@ function blurPersonalInfo(zone: Region): void {
   }
   detectedZone = zoneKey
   const round = detectionRound
-  blurStatus.textContent = 'Recherche des infos perso…'
+  blurStatus.textContent = text.searchingPersonalInfo
   pendingDetection = window.overlay.findPersonalInfo(zone).then(
     (areas) => {
       if (round === detectionRound) {
         frozen.addBlurs(areas)
-        blurStatus.textContent = describeFoundInfo(areas.length)
+        blurStatus.textContent = text.personalInfoBlurred(areas.length)
       }
     },
     () => {
       if (round === detectionRound) {
-        blurStatus.textContent = 'Impossible de chercher les infos perso'
+        blurStatus.textContent = text.personalInfoFailed
       }
     }
   )
@@ -389,5 +386,6 @@ actionBar.addEventListener('click', (event) => {
 })
 
 window.addEventListener('resize', render)
+translatePage(text)
 sizeLoupe()
 window.overlay.onFrame(showFrame)

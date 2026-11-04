@@ -1,11 +1,11 @@
 import { execFile, execFileSync, spawn, type ChildProcessWithoutNullStreams } from 'node:child_process'
 import { promisify } from 'node:util'
+import { uiText } from './uiText'
 
 const execFileAsync = promisify(execFile)
 
 const COMPONENT = 'cliche'
 const CAPTURE_ACTION = 'capture-region'
-const ACTION_ID = `['${COMPONENT}', '${CAPTURE_ACTION}', 'cliché', 'Capturer une zone']`
 const QT_KEY_PRINT = 0x01000009
 const PRINT_KEYS = `[([${QT_KEY_PRINT}],)]`
 const KGLOBALACCEL_SET_PRESENT = '2'
@@ -16,6 +16,10 @@ const OWNER_LINE = /^The name org\.kde\.kglobalaccel is owned by /
 let pressMonitor: ChildProcessWithoutNullStreams | null = null
 let shortcutPressed: () => void = () => undefined
 let releasing = false
+
+function actionId(): string {
+  return `['${COMPONENT}', '${CAPTURE_ACTION}', 'cliché', '${uiText().shortcutName.replaceAll("'", "\\'")}']`
+}
 
 function kglobalaccelArgs(method: string, ...args: string[]): string[] {
   return [
@@ -32,14 +36,14 @@ function kglobalaccelArgs(method: string, ...args: string[]): string[] {
 }
 
 async function bindPrintKey(): Promise<boolean> {
-  await execFileAsync('gdbus', kglobalaccelArgs('doRegister', ACTION_ID))
+  await execFileAsync('gdbus', kglobalaccelArgs('doRegister', actionId()))
   await execFileAsync(
     'gdbus',
-    kglobalaccelArgs('setShortcutKeys', ACTION_ID, PRINT_KEYS, KGLOBALACCEL_IS_DEFAULT)
+    kglobalaccelArgs('setShortcutKeys', actionId(), PRINT_KEYS, KGLOBALACCEL_IS_DEFAULT)
   )
   const { stdout } = await execFileAsync(
     'gdbus',
-    kglobalaccelArgs('setShortcutKeys', ACTION_ID, PRINT_KEYS, KGLOBALACCEL_SET_PRESENT)
+    kglobalaccelArgs('setShortcutKeys', actionId(), PRINT_KEYS, KGLOBALACCEL_SET_PRESENT)
   )
   return /[1-9]/.test(stdout)
 }
@@ -102,7 +106,7 @@ export function releaseCaptureShortcut(): void {
   releasing = true
   pressMonitor?.kill()
   try {
-    execFileSync('gdbus', kglobalaccelArgs('setInactive', ACTION_ID))
+    execFileSync('gdbus', kglobalaccelArgs('setInactive', actionId()))
   } catch (error) {
     console.error('Impossible de libérer le raccourci KDE', error)
   }

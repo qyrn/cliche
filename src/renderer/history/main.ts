@@ -1,10 +1,15 @@
+import { messagesFor } from '../../shared/i18n/messages'
 import type { CaptureEntry, KnownTexts } from '../../shared/types'
 import { requireElement } from '../requireElement'
-import { dayKey, dayLabel, timeLabel } from './captureDates'
+import { translatePage } from '../translatePage'
+import { dateLabels, dayKey } from './captureDates'
 import { containsAllWords, searchWords } from './textSearch'
 
 const COPIED_MARK_DURATION_MS = 1600
 const TEXT_PREVIEW_LENGTH = 90
+
+const text = messagesFor(navigator.language)
+const { dayLabel, timeLabel } = dateLabels(text)
 
 const sheet = requireElement('#sheet', HTMLElement)
 const emptyMessage = requireElement('#empty', HTMLParagraphElement)
@@ -29,21 +34,17 @@ function failureMessage(prefix: string, error: unknown): string {
     error instanceof Error
       ? error.message.replace(/^Error invoking remote method '[^']+': (Error: )?/, '')
       : ''
-  return detail ? `${prefix} : ${detail}` : prefix
+  return detail ? text.withDetail(prefix, detail) : prefix
 }
 
 function updateCount(): void {
   const searching = searchWords(searchInput.value).length > 0
-  const total = captureCount === 1 ? '1 capture' : `${captureCount} captures`
-  const shown = searching ? `${matchCount} sur ${captureCount}` : total
-  countLabel.textContent = remainingToRead > 0 ? `${shown}, encore ${remainingToRead} à lire` : shown
+  const shown = searching ? text.matchCount(matchCount, captureCount) : text.captureCount(captureCount)
+  countLabel.textContent = remainingToRead > 0 ? text.stillToRead(shown, remainingToRead) : shown
   emptyMessage.hidden = captureCount > 0
   noMatchMessage.hidden = !searching || matchCount > 0 || captureCount === 0
-  const stillReading =
-    remainingToRead > 0
-      ? ` Il reste ${remainingToRead} captures à lire, elles s'afficheront ici si le mot y est.`
-      : ''
-  noMatchMessage.textContent = `Aucune capture ne contient « ${searchInput.value.trim()} ».${stillReading}`
+  const stillReading = remainingToRead > 0 ? text.noMatchStillReading(remainingToRead) : ''
+  noMatchMessage.textContent = `${text.noMatch(searchInput.value.trim())}${stillReading}`
 }
 
 function applySearch(): void {
@@ -85,7 +86,7 @@ function buildFrame(entry: CaptureEntry): HTMLLIElement {
   const time = timeLabel(entry.takenAt)
   frame.dataset['name'] = entry.name
   requireElement('img', HTMLImageElement, frame).src = captureUrl(entry.name)
-  requireElement('.shot', HTMLButtonElement, frame).setAttribute('aria-label', `Copier la capture de ${time}`)
+  requireElement('.shot', HTMLButtonElement, frame).setAttribute('aria-label', text.copyCaptureOf(time))
   const timeElement = requireElement('time', HTMLTimeElement, frame)
   timeElement.textContent = time
   timeElement.dateTime = new Date(entry.takenAt).toISOString()
@@ -145,20 +146,20 @@ async function copyImage(frame: HTMLLIElement, name: string): Promise<void> {
   try {
     await window.captures.copyImage(name)
     markCopied(frame)
-    setStatus('Image copiée')
+    setStatus(text.imageCopied)
   } catch (error) {
-    setStatus(failureMessage('Impossible de copier cette image', error))
+    setStatus(failureMessage(text.cannotCopyImage, error))
   }
 }
 
 async function copyText(name: string): Promise<void> {
-  setStatus('Lecture du texte…')
+  setStatus(text.readingText)
   try {
-    const text = await window.captures.readText(name)
-    readTexts.set(name, text)
-    setStatus(text ? `Texte copié : « ${previewOf(text)} »` : 'Aucun texte trouvé dans cette capture')
+    const captureText = await window.captures.readText(name)
+    readTexts.set(name, captureText)
+    setStatus(captureText ? text.textCopiedPreview(previewOf(captureText)) : text.noTextInCapture)
   } catch (error) {
-    setStatus(failureMessage('La lecture du texte a échoué', error))
+    setStatus(failureMessage(text.textReadingFailed, error))
   }
 }
 
@@ -166,7 +167,7 @@ async function openCapture(name: string): Promise<void> {
   try {
     await window.captures.open(name)
   } catch (error) {
-    setStatus(failureMessage("Impossible d'ouvrir cette capture", error))
+    setStatus(failureMessage(text.cannotOpenCapture, error))
   }
 }
 
@@ -174,9 +175,9 @@ async function trashCapture(frame: HTMLLIElement, name: string): Promise<void> {
   try {
     await window.captures.trash(name)
     removeFrame(frame)
-    setStatus('Capture mise à la corbeille')
+    setStatus(text.movedToTrash)
   } catch (error) {
-    setStatus(failureMessage('Impossible de supprimer cette capture', error))
+    setStatus(failureMessage(text.cannotTrash, error))
   }
 }
 
@@ -234,9 +235,10 @@ sheet.addEventListener('dragstart', (event) => {
 openFolderButton.addEventListener('click', () => {
   window.captures
     .openFolder()
-    .catch((error: unknown) => setStatus(failureMessage("Impossible d'ouvrir le dossier", error)))
+    .catch((error: unknown) => setStatus(failureMessage(text.cannotOpenFolder, error)))
 })
 
+translatePage(text)
 searchInput.addEventListener('input', applySearch)
 
 searchInput.addEventListener('keydown', (event) => {

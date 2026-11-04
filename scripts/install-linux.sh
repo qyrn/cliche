@@ -18,7 +18,8 @@ cat > "$APPLICATIONS_DIR/cliche.desktop" <<DESKTOP
 [Desktop Entry]
 Type=Application
 Name=cliché
-Comment=Captures d'écran avec historique et lecture du texte
+Comment=Screenshots with history and text recognition
+Comment[fr]=Captures d'écran avec historique et lecture du texte
 Exec="$APP_DIR/cliche"
 Icon=$APP_DIR/resources/icon.png
 StartupWMClass=cliche
@@ -28,7 +29,8 @@ Terminal=false
 Actions=capture;
 
 [Desktop Action capture]
-Name=Capturer une zone
+Name=Capture a region
+Name[fr]=Capturer une zone
 Exec="$APP_DIR/cliche" --capture
 DESKTOP
 

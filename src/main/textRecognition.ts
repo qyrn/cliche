@@ -4,6 +4,7 @@ import type { Region } from '../shared/types'
 import { copyTextToClipboard } from './waylandClipboard'
 import { readingLanguages } from './readingLanguages'
 import { isCommandNotFound, MissingToolError, missingToolError, ocrLanguagePackage } from './systemTools'
+import { uiText } from './uiText'
 
 const MISSING_LANGUAGE = /Failed loading language '([^']+)'/g
 const TSV_WORD_LEVEL = '5'
@@ -79,7 +80,7 @@ function tesseractFailure(stderr: string, exitCode: number | null): Error {
     .filter((language) => language !== undefined)
     .map(ocrLanguagePackage)
   if (missingPackages.length > 0) {
-    return new MissingToolError(`Il manque des langues à Tesseract, installe ${missingPackages.join(' et ')}`)
+    return new MissingToolError(uiText().missingReadingLanguages(missingPackages))
   }
   return new Error(stderr.trim() || `tesseract a quitté avec le code ${exitCode}`)
 }
@@ -94,7 +95,9 @@ async function runTesseract(png: Buffer, outputFormats: string[] = []): Promise<
     const errors: Buffer[] = []
     tesseract.stdout.on('data', (chunk: Buffer) => output.push(chunk))
     tesseract.stderr.on('data', (chunk: Buffer) => errors.push(chunk))
-    tesseract.on('error', (error) => reject(isCommandNotFound(error) ? missingToolError('tesseract') : error))
+    tesseract.on('error', (error) =>
+      reject(isCommandNotFound(error) ? missingToolError('tesseract', uiText()) : error)
+    )
     tesseract.on('close', (exitCode) => {
       if (exitCode === 0) {
         resolve(Buffer.concat(output).toString())

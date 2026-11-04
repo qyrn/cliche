@@ -18,22 +18,28 @@
       <canvas></canvas>
       <output></output>
     </div>
-    <div id="actions" role="toolbar" aria-label="Que faire de cette zone" hidden>
-      <button type="button" class="primary" data-action="copy">Copier <kbd>Entrée</kbd></button>
-      <button type="button" data-action="text">Copier le texte <kbd>T</kbd></button>
-      <button type="button" data-action="blur" aria-pressed="false">Flouter <kbd>B</kbd></button>
-      <button type="button" data-action="dismiss">Annuler <kbd>Échap</kbd></button>
+    <div id="actions" role="toolbar" data-i18n-aria-label="overlayToolbarLabel" hidden>
+      <button type="button" class="primary" data-action="copy">
+        <span data-i18n="copy"></span> <kbd data-i18n="keyEnter"></kbd>
+      </button>
+      <button type="button" data-action="text"><span data-i18n="copyText"></span> <kbd>T</kbd></button>
+      <button type="button" data-action="blur" aria-pressed="false">
+        <span data-i18n="blur"></span> <kbd>B</kbd>
+      </button>
+      <button type="button" data-action="dismiss">
+        <span data-i18n="cancel"></span> <kbd data-i18n="keyEscape"></kbd>
+      </button>
     </div>
     <p id="blur-hint" class="hint" hidden>
-      Glisse sur ce que tu veux flouter
+      <span data-i18n="blurHint"></span>
       <span id="blur-status" class="status"></span>
-      <span class="legend"><kbd>Ctrl+Z</kbd> retirer le dernier</span>
-      <span class="legend"><kbd>B</kbd> terminer</span>
+      <span class="legend"><kbd>Ctrl+Z</kbd> <span data-i18n="removeLastBlur"></span></span>
+      <span class="legend"><kbd>B</kbd> <span data-i18n="finishBlur"></span></span>
     </p>
     <p id="hint" class="hint">
-      Glisse pour choisir une zone, ou clique sur une fenêtre
-      <span class="legend"><kbd>Entrée</kbd> tout l'écran</span>
-      <span class="legend"><kbd>Échap</kbd> annuler</span>
+      <span data-i18n="aimHint"></span>
+      <span class="legend"><kbd data-i18n="keyEnter"></kbd> <span data-i18n="wholeScreen"></span></span>
+      <span class="legend"><kbd data-i18n="keyEscape"></kbd> <span data-i18n="cancelHint"></span></span>
     </p>
   </body>
 </html>

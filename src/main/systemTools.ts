@@ -1,3 +1,5 @@
+import type { Messages } from '../shared/i18n/messages'
+
 export const TOOL_PACKAGES = {
   'wl-copy': 'wl-clipboard',
   gdbus: 'glib2',
@@ -16,6 +18,6 @@ export function isCommandNotFound(error: unknown): boolean {
 
 export class MissingToolError extends Error {}
 
-export function missingToolError(tool: ExternalTool): MissingToolError {
-  return new MissingToolError(`${tool} est introuvable, installe le paquet ${TOOL_PACKAGES[tool]}`)
+export function missingToolError(tool: ExternalTool, messages: Messages): MissingToolError {
+  return new MissingToolError(messages.missingTool(tool, TOOL_PACKAGES[tool]))
 }

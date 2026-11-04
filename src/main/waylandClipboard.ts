@@ -1,10 +1,13 @@
 import { spawn } from 'node:child_process'
 import { isCommandNotFound, missingToolError } from './systemTools'
+import { uiText } from './uiText'
 
 function wlCopy(data: Buffer | string, mimeType: string): Promise<void> {
   return new Promise((resolve, reject) => {
     const child = spawn('wl-copy', ['--type', mimeType], { stdio: ['pipe', 'ignore', 'ignore'] })
-    child.on('error', (error) => reject(isCommandNotFound(error) ? missingToolError('wl-copy') : error))
+    child.on('error', (error) =>
+      reject(isCommandNotFound(error) ? missingToolError('wl-copy', uiText()) : error)
+    )
     child.on('exit', (exitCode) => {
       if (exitCode === 0) {
         resolve()

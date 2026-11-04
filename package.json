@@ -1,7 +1,7 @@
 {
   "name": "cliche",
   "version": "0.3.0",
-  "description": "Captures d'écran rapides pour KDE Plasma Wayland, avec historique et OCR local",
+  "description": "Fast screenshots for KDE Plasma on Wayland, with history and local text recognition",
   "author": "qyrn",
   "license": "MIT",
   "private": true,
@@ -16,7 +16,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
     "lint": "eslint .",
     "test": "vitest run",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "screenshots": "LANGUAGE=fr CLICHE_SCREENSHOT=docs/fr pnpm dev && LANGUAGE=en CLICHE_SCREENSHOT=docs/en pnpm dev"
   },
   "packageManager": "pnpm@10.23.0",
   "pnpm": {
@@ -56,23 +57,25 @@
       "icon": "resources/icon.png",
       "category": "Utility",
       "executableName": "cliche",
-      "synopsis": "Captures d'écran rapides pour KDE Plasma Wayland",
+      "synopsis": "Fast screenshots for KDE Plasma on Wayland",
       "maintainer": "qyrn",
       "desktop": {
         "entry": {
           "Name": "cliché",
           "Keywords": "screenshot;capture;ocr;",
           "StartupWMClass": "cliche",
-          "Actions": "capture;"
+          "Actions": "capture;",
+          "Comment[fr]": "Captures d'écran avec historique et lecture du texte"
         },
         "desktopActions": {
           "capture": {
-            "Name": "Capturer une zone",
+            "Name": "Capture a region",
+            "Name[fr]": "Capturer une zone",
             "Exec": "cliche --capture"
           }
         }
       },
-      "description": "Captures d'écran avec historique et lecture du texte"
+      "description": "Screenshots with history and text recognition"
     },
     "pacman": {
       "depends": [

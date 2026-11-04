@@ -21,6 +21,7 @@ import {
 import { scanFrameForPersonalInfo } from './personalInfoScan'
 import { grabActiveScreen, type CapturedFrame } from './screenGrab'
 import { copyTextFromImage } from './textRecognition'
+import { uiText } from './uiText'
 
 const TEXT_PREVIEW_LENGTH = 160
 const REVEAL_TIMEOUT_MS = 4000
@@ -47,13 +48,10 @@ export async function startCapture(): Promise<void> {
     await whenOverlayReady()
     pendingFrame = await grabActiveScreen()
     sendFrameToOverlay(pendingFrame)
-    revealWatchdog = setTimeout(
-      () => abandonCapture("L'écran de sélection n'a pas répondu, réessaie."),
-      REVEAL_TIMEOUT_MS
-    )
+    revealWatchdog = setTimeout(() => abandonCapture(uiText().overlayUnresponsive), REVEAL_TIMEOUT_MS)
   } catch (error) {
     overlayBusy = false
-    notify('La capture a échoué', errorMessage(error))
+    notify(uiText().captureFailed, errorMessage(error))
   }
 }
 
@@ -69,7 +67,7 @@ function closeOverlay(): CapturedFrame | null {
 function abandonCapture(reason: string): void {
   if (overlayBusy) {
     closeOverlay()
-    notify('La capture a échoué', reason)
+    notify(uiText().captureFailed, reason)
   }
 }
 
@@ -83,7 +81,7 @@ function revealDrawnFrame(): void {
 async function takeRegion(payload: unknown): Promise<NativeImage> {
   const frame = closeOverlay()
   if (!frame) {
-    throw new Error('Aucune capture en cours')
+    throw new Error(uiText().noCaptureInProgress)
   }
   const request = toExportRequestWithin(payload, frame)
   for (const blur of request.blurs) {
@@ -102,19 +100,19 @@ async function copyAndSave(image: NativeImage): Promise<void> {
   )
   notifyHistoryChanged()
   const folder = relative(homedir(), captureDirectory())
-  notify('Capture copiée', `Tu la retrouves aussi dans ${folder}.`, { image, onClick: showHistoryWindow })
+  notify(uiText().captureCopied, uiText().captureAlsoIn(folder), { image, onClick: showHistoryWindow })
 }
 
 async function readTextFrom(image: NativeImage): Promise<void> {
   try {
     const text = await copyTextFromImage(image.toPNG())
     if (text) {
-      notify('Texte copié', previewOf(text))
+      notify(uiText().textCopied, previewOf(text))
     } else {
-      notify('Aucun texte trouvé', 'Essaie avec une zone plus large ou un texte plus net.')
+      notify(uiText().noTextFound, uiText().noTextFoundHint)
     }
   } catch (error) {
-    notify('La lecture du texte a échoué', errorMessage(error))
+    notify(uiText().textReadingFailed, errorMessage(error))
   }
 }
 
@@ -129,12 +127,12 @@ function fromOverlay(handler: (payload: unknown) => Promise<void> | void) {
     }
     Promise.resolve()
       .then(() => handler(payload))
-      .catch((error: unknown) => notify('Quelque chose a planté', errorMessage(error)))
+      .catch((error: unknown) => notify(uiText().somethingBroke, errorMessage(error)))
   }
 }
 
 export function registerCaptureFlow(): void {
-  onOverlayLost(() => abandonCapture("L'écran de sélection a planté, réessaie."))
+  onOverlayLost(() => abandonCapture(uiText().overlayCrashed))
   ipcMain.on(IpcChannel.OverlayFrameDrawn, fromOverlay(revealDrawnFrame))
   ipcMain.on(
     IpcChannel.OverlayDismiss,

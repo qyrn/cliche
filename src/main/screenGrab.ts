@@ -1,6 +1,7 @@
 import { execFile } from 'node:child_process'
 import type { ScreenFrame } from '../shared/types'
 import { resourcePath } from './resourcePath'
+import { uiText } from './uiText'
 import { grabWindowLayout, windowRegionsIn } from './windowLayout'
 
 const HELPER_OUTPUT_LIMIT_BYTES = 1024 * 1024 * 1024
@@ -17,7 +18,7 @@ function parseHelperOutput(output: Buffer): ScreenPixels {
   const [width = 0, height = 0] = output.subarray(0, headerEnd).toString().split(' ').map(Number)
   const pixels = output.subarray(headerEnd + 1)
   if (headerEnd < 0 || width <= 0 || height <= 0 || pixels.length !== width * height * 4) {
-    throw new Error('Réponse illisible du helper de capture')
+    throw new Error(uiText().unreadableHelperAnswer)
   }
   return { width, height, pixels }
 }

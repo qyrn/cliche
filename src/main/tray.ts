@@ -4,22 +4,24 @@ import { captureDirectory } from './captureStore'
 import { startCapture } from './captureFlow'
 import { showHistoryWindow } from './historyWindow'
 import { resourcePath } from './resourcePath'
+import { uiText } from './uiText'
 
 let tray: Tray | null = null
 
 export async function createTray(onQuit: () => void): Promise<void> {
   const launchedAtLogin = canLaunchAtLogin() && (await isLaunchedAtLogin())
+  const text = uiText()
   tray = new Tray(resourcePath('tray', 'tray.png'))
   tray.setToolTip('cliché')
   tray.on('click', showHistoryWindow)
   tray.setContextMenu(
     Menu.buildFromTemplate([
-      { label: 'Capturer une zone', click: () => void startCapture() },
-      { label: 'Historique', click: showHistoryWindow },
-      { label: 'Ouvrir le dossier', click: () => void shell.openPath(captureDirectory()) },
+      { label: text.trayCapture, click: () => void startCapture() },
+      { label: text.trayHistory, click: showHistoryWindow },
+      { label: text.trayOpenFolder, click: () => void shell.openPath(captureDirectory()) },
       { type: 'separator' },
       {
-        label: "Lancer à l'ouverture de session",
+        label: text.trayLaunchAtLogin,
         type: 'checkbox',
         checked: launchedAtLogin,
         visible: canLaunchAtLogin(),
@@ -28,7 +30,7 @@ export async function createTray(onQuit: () => void): Promise<void> {
             console.error('Impossible de changer le lancement au démarrage', error)
           )
       },
-      { label: 'Quitter', click: onQuit }
+      { label: text.trayQuit, click: onQuit }
     ])
   )
 }

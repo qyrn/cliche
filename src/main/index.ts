@@ -12,6 +12,7 @@ import { systemReadingLanguages } from './readingLanguages'
 import { prepareOverlay } from './overlayWindow'
 import { runScreenshotMode } from './screenshotMode'
 import { createTray } from './tray'
+import { uiText } from './uiText'
 
 const CAPTURE_FLAG = '--capture'
 const HIDDEN_FLAG = '--hidden'
@@ -30,20 +31,14 @@ function handleLaunchArguments(argv: string[]): void {
 async function bindPrintKey(): Promise<void> {
   const bound = await registerCaptureShortcut(() => void startCapture()).catch(() => false)
   if (!bound) {
-    notify(
-      'La touche Impr est déjà prise',
-      'Une autre app la garde pour elle. Tu peux choisir un autre raccourci dans les réglages KDE, rubrique Raccourcis.'
-    )
+    notify(uiText().printKeyTaken, uiText().printKeyTakenHint)
   }
 }
 
 async function warnAboutMissingTools(): Promise<void> {
   const missingPackages = await findMissingPackages(systemReadingLanguages())
   if (missingPackages.length > 0) {
-    notify(
-      'Il manque des outils à cliché',
-      `Installe ${missingPackages.join(', ')} pour que la copie et la lecture du texte marchent.`
-    )
+    notify(uiText().missingTools, uiText().installPackages(missingPackages))
   }
 }
 
