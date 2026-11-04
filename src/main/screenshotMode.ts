@@ -30,6 +30,7 @@ const LOUPE_AIM_INSET_PIXELS = 7
 
 const ACTION_BAR_SHOWN = "!document.querySelector('#actions').hidden"
 const LOUPE_SHOWN = "!document.querySelector('#loupe').hidden"
+const SIZE_SHOWN = "!document.querySelector('#size').hidden"
 const VISIBLE_THUMBNAILS_LOADED = `document.querySelectorAll('.frame').length > 0 &&
   [...document.images]
     .filter((image) => image.getBoundingClientRect().top < window.innerHeight)
@@ -101,6 +102,14 @@ async function photographSelection(scene: Scene, outputDirectory: string): Promi
   await loadRendererPage(window, 'overlay')
   window.webContents.send(IpcChannel.OverlayFrame, scene.frame)
   await frameDrawn
+  const hovered = scene.hoverTarget
+  const hoverPoint = {
+    x: hovered.x + Math.round(hovered.width / 2),
+    y: hovered.y + Math.round(hovered.height / 2)
+  }
+  window.webContents.sendInputEvent({ type: 'mouseMove', ...hoverPoint })
+  await waitForPage(window, SIZE_SHOWN)
+  await savePageImage(window, join(outputDirectory, 'window.png'))
   const selection = paddedRegion(scene.heroRegion, SELECTION_PADDING_PIXELS)
   const start = { x: selection.x, y: selection.y }
   const end = { x: selection.x + selection.width, y: selection.y + selection.height }
